@@ -1,51 +1,62 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useLibrary } from "./useLibrary";
+import { useTheme } from "./theme";
+import { Sidebar, type LibraryFilter } from "./components/Sidebar";
+import { SongLibrary } from "./components/SongLibrary";
+import { SongPage } from "./components/SongPage";
+import { NewSongDialog } from "./components/NewSongDialog";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+export default function App() {
+  const library = useLibrary();
+  const [theme, setTheme] = useTheme();
+  const [filter, setFilter] = useState<LibraryFilter>({ kind: "all" });
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const openSong = openId ? library.songs.find((s) => s.id === openId) : undefined;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
+    <div className="app">
+      <Sidebar
+        library={library}
+        filter={filter}
+        onFilter={(f) => {
+          setFilter(f);
+          setOpenId(null);
         }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+        theme={theme}
+        onTheme={setTheme}
+      />
+
+      <main className="main">
+        {!library.ready && !library.error ? null : openSong ? (
+          <SongPage song={openSong} library={library} onBack={() => setOpenId(null)} />
+        ) : (
+          <SongLibrary library={library} filter={filter} onOpen={setOpenId} onNew={() => setCreating(true)} />
+        )}
+      </main>
+
+      {creating && (
+        <NewSongDialog
+          defaultFolderId={filter.kind === "folder" ? filter.id : null}
+          defaultTag={filter.kind === "tag" ? filter.tag : null}
+          onClose={() => setCreating(false)}
+          onCreate={async (fields) => {
+            setCreating(false);
+            const song = await library.createSong(fields);
+            if (song) setOpenId(song.id);
+          }}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      )}
+
+      {library.error && (
+        <div className="toast" role="alert">
+          <span>Bir sorun oldu: {library.error}</span>
+          <button onClick={library.clearError} aria-label="Kapat">
+            ×
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
-
-export default App;

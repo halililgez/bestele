@@ -1,0 +1,855 @@
+/* ============ Temalar ============ */
+
+:root,
+:root[data-theme="defter"] {
+  --font-body: "Lora", Georgia, "Times New Roman", serif;
+  --font-hand: "Caveat", "Segoe Print", cursive;
+  --font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --desk: #e9dfca;
+  --paper: #fbf6ea;
+  --paper-2: #f5eedd;
+  --ink: #2c2a33;
+  --ink-soft: #6f675a;
+  --ink-faint: #a39a89;
+  --rule: rgba(84, 122, 176, 0.2);
+  --margin-line: rgba(196, 72, 60, 0.35);
+  --accent: #a8402b;
+  --accent-ink: #fffaf0;
+  --accent-soft: rgba(168, 64, 43, 0.1);
+  --border: rgba(60, 48, 30, 0.16);
+  --shadow: 0 1px 2px rgba(60, 40, 10, 0.08), 0 6px 18px rgba(60, 40, 10, 0.08);
+  --sidebar-bg: #e2d6bd;
+  --input-bg: #fffdf6;
+  --title-font: var(--font-hand);
+  --title-size: 2.6rem;
+  --card-title-size: 1.75rem;
+
+  --st-fikir: #8a7a5c;
+  --st-taslak: #b07a1e;
+  --st-demo: #3d6fa8;
+  --st-tamam: #4c8a4a;
+
+  --radius: 6px;
+  color-scheme: light;
+}
+
+:root[data-theme="modern"] {
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --desk: #101114;
+  --paper: #17181c;
+  --paper-2: #1e2025;
+  --ink: #ececef;
+  --ink-soft: #a0a3ad;
+  --ink-faint: #6b6e78;
+  --rule: transparent;
+  --margin-line: transparent;
+  --accent: #e8a33d;
+  --accent-ink: #1a1407;
+  --accent-soft: rgba(232, 163, 61, 0.14);
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sidebar-bg: #0c0d10;
+  --input-bg: #121317;
+  --title-font: var(--font-ui);
+  --title-size: 2rem;
+  --card-title-size: 1.1rem;
+
+  --st-fikir: #8f939e;
+  --st-taslak: #e0a33f;
+  --st-demo: #5b9be6;
+  --st-tamam: #5cbf73;
+
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+/* ============ Temel ============ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============ Yerleşim ============ */
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100%;
+}
+
+.main {
+  overflow: auto;
+  position: relative;
+}
+
+/* Defter kâğıdı: çizgiler ve kırmızı kenar boşluğu çizgisi */
+.paper {
+  min-height: 100%;
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  background-attachment: local;
+  position: relative;
+  padding: 32px 48px 64px 88px;
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 64px;
+  width: 2px;
+  background: var(--margin-line);
+}
+
+:root[data-theme="modern"] .paper {
+  padding: 32px 40px 64px;
+}
+
+/* ============ Kenar çubuğu ============ */
+
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px 12px;
+  gap: 18px;
+  overflow: auto;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.brand {
+  font-family: var(--font-hand);
+  font-size: 2.4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 0 10px;
+  margin: 0;
+}
+
+:root[data-theme="modern"] .brand {
+  font-family: var(--font-ui);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 6px;
+}
+
+.side-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.side-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  color: var(--ink-soft);
+}
+
+.side-item:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.side-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.side-item .label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side-item .count {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.side-row {
+  position: relative;
+}
+
+.side-row .row-actions {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  gap: 2px;
+}
+
+.side-row:hover .row-actions,
+.side-row:focus-within .row-actions {
+  display: flex;
+}
+
+.side-row:hover .count,
+.side-row:focus-within .count {
+  visibility: hidden;
+}
+
+.side-empty {
+  padding: 2px 10px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.side-input {
+  margin: 2px 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  width: calc(100% - 8px);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.storage-note {
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding: 0 10px;
+}
+
+/* ============ Butonlar ============ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-danger {
+  color: #c0392b;
+}
+
+.btn-danger:hover {
+  border-color: #c0392b;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: calc(var(--radius) + 3px);
+  background: var(--accent-soft);
+}
+
+.segmented button {
+  flex: 1;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.segmented button.on {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+/* ============ Kütüphane ============ */
+
+.lib-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-family: var(--title-font);
+  font-size: var(--title-size);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+
+:root[data-theme="modern"] .page-title {
+  letter-spacing: -0.02em;
+}
+
+.page-sub {
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  font-family: var(--font-ui);
+}
+
+.search {
+  flex: 1 1 220px;
+  max-width: 340px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.chip.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+}
+
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.song-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  min-height: 150px;
+}
+
+:root[data-theme="defter"] .song-card {
+  background: #fffdf5;
+  transform: rotate(-0.25deg);
+}
+
+:root[data-theme="defter"] .song-card:nth-child(even) {
+  transform: rotate(0.3deg);
+}
+
+.song-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.song-card .title {
+  font-family: var(--title-font);
+  font-size: var(--card-title-size);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  word-break: break-word;
+}
+
+.song-card .writer {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+}
+
+:root[data-theme="modern"] .song-card .writer {
+  font-style: normal;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.pill {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-fikir {
+  color: var(--st-fikir);
+}
+.status-taslak {
+  color: var(--st-taslak);
+}
+.status-demo {
+  color: var(--st-demo);
+}
+.status-tamam {
+  color: var(--st-tamam);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.card-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.empty {
+  max-width: 420px;
+  margin: 60px auto;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.empty h2 {
+  font-family: var(--title-font);
+  font-size: calc(var(--title-size) * 0.8);
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.empty p {
+  margin: 0 0 18px;
+}
+
+/* ============ Şarkı sayfası ============ */
+
+.song-page {
+  max-width: 860px;
+}
+
+.back {
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 0;
+  margin-bottom: 14px;
+}
+
+.back:hover {
+  color: var(--accent);
+}
+
+.title-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: var(--title-font);
+  font-size: var(--title-size);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0;
+  outline: none;
+}
+
+.title-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.writer-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 2px 0;
+  outline: none;
+  margin-bottom: 16px;
+}
+
+:root[data-theme="modern"] .writer-input {
+  font-style: normal;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin: 8px 0 24px;
+  font-family: var(--font-ui);
+}
+
+.tabs button {
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tabs button.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tabs .soon {
+  font-size: 10px;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--ink-faint);
+  vertical-align: 1px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-ui);
+}
+
+.field > span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  font-family: var(--font-body);
+}
+
+.field textarea {
+  min-height: 160px;
+  resize: vertical;
+  line-height: 32px;
+  padding: 0 12px;
+}
+
+:root[data-theme="defter"] .field textarea {
+  background-color: transparent;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  font-family: var(--font-hand);
+  font-size: 1.35rem;
+}
+
+.tag-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  min-height: 40px;
+}
+
+.tag-editor input {
+  flex: 1;
+  min-width: 120px;
+  border: 0;
+  padding: 2px;
+  background: transparent;
+  outline: none;
+}
+
+.tag-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.tag-token button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+.page-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.soon-panel {
+  padding: 28px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  background: var(--paper-2);
+}
+
+.soon-panel h3 {
+  margin: 0 0 6px;
+  font-family: var(--title-font);
+  font-size: calc(var(--card-title-size) * 1.05);
+  color: var(--ink);
+}
+
+.soon-panel p {
+  margin: 0;
+}
+
+/* ============ Diyalog ============ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 10, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.dialog {
+  width: min(440px, 100%);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  padding: 22px 24px;
+}
+
+.dialog h2 {
+  margin: 0 0 16px;
+  font-family: var(--title-font);
+  font-size: calc(var(--card-title-size) * 1.15);
+}
+
+.dialog p {
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+}
+
+.dialog .fields {
+  grid-template-columns: 1fr 1fr;
+}
+
+.dialog .field.wide {
+  grid-column: 1 / -1;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  max-width: 420px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: #c0392b;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  z-index: 60;
+}
+
+.toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
