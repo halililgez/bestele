@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getRepo, type Repo } from "./data/repo";
+import { getAudioStore } from "./data/audioStore";
 import type { Folder, Song, SongFields } from "./types";
 
 /** Şarkıları ve klasörleri yükleyip değişiklikleri depoya yazan merkezi durum. */
@@ -64,6 +65,11 @@ export function useLibrary() {
   const deleteSong = useCallback(
     (id: string) =>
       guard(async (r) => {
+        // Önce şarkının ses dosyalarını sil, sonra kayıtlarını
+        const audio = getAudioStore();
+        for (const rec of await r.listRecordings(id)) {
+          await audio.remove(rec.fileName).catch(() => undefined);
+        }
         await r.deleteSong(id);
         setSongs((prev) => prev.filter((s) => s.id !== id));
       }),

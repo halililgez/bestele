@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { Folder, Section, SectionKind, Song, SongFields, SongStatus } from "../types";
+import type { Folder, Recording, Section, SectionKind, Song, SongFields, SongStatus } from "../types";
 import { newId, type Repo } from "./repo";
 
 interface SongRow {
@@ -56,7 +56,52 @@ const MIGRATIONS: string[] = [
      updated_at INTEGER NOT NULL
    );
    CREATE INDEX IF NOT EXISTS idx_sections_song ON sections(song_id, position);`,
+  // 3: Ses kayıtları (dosyanın kendisi diskte, recordings klasöründe)
+  `CREATE TABLE IF NOT EXISTS recordings (
+     id TEXT PRIMARY KEY,
+     song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+     section_id TEXT REFERENCES sections(id) ON DELETE SET NULL,
+     title TEXT NOT NULL DEFAULT '',
+     note TEXT NOT NULL DEFAULT '',
+     file_name TEXT NOT NULL,
+     mime_type TEXT NOT NULL DEFAULT '',
+     duration_ms INTEGER,
+     size_bytes INTEGER NOT NULL DEFAULT 0,
+     source TEXT NOT NULL DEFAULT 'kayit',
+     created_at INTEGER NOT NULL
+   );
+   CREATE INDEX IF NOT EXISTS idx_recordings_song ON recordings(song_id, created_at);`,
 ];
+
+interface RecordingRow {
+  id: string;
+  song_id: string;
+  section_id: string | null;
+  title: string;
+  note: string;
+  file_name: string;
+  mime_type: string;
+  duration_ms: number | null;
+  size_bytes: number;
+  source: string;
+  created_at: number;
+}
+
+function toRecording(r: RecordingRow): Recording {
+  return {
+    id: r.id,
+    songId: r.song_id,
+    sectionId: r.section_id,
+    title: r.title,
+    note: r.note,
+    fileName: r.file_name,
+    mimeType: r.mime_type,
+    durationMs: r.duration_ms,
+    sizeBytes: r.size_bytes,
+    source: r.source === "dosya" ? "dosya" : "kayit",
+    createdAt: r.created_at,
+  };
+}
 
 interface SectionRow {
   id: string;
@@ -175,6 +220,7 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async deleteSong(id) {
+      await db.execute("DELETE FROM recordings WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM sections WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM songs WHERE id = $1", [id]);
     },
@@ -241,6 +287,7 @@ export async function createSqlRepo(): Promise<Repo> {
 
     async deleteSection(id) {
       const section = await getSection(id);
+      await db.execute("UPDATE recordings SET section_id = NULL WHERE section_id = $1", [id]);
       await db.execute("DELETE FROM sections WHERE id = $1", [id]);
       const rest = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [section.songId]);
       for (let i = 0; i < rest.length; i++) {
@@ -255,7 +302,49 @@ export async function createSqlRepo(): Promise<Repo> {
       }
       await touchSong(songId, Date.now());
     },
+
+    async listRecordings(songId) {
+      const rows = await db.select<RecordingRow[]>(
+        "SELECT * FROM recordings WHERE song_id = $1 ORDER BY created_at DESC",
+        [songId],
+      );
+      return rows.map(toRecording);
+    },
+
+    async createRecording(f) {
+      const id = newId();
+      const now = Date.now();
+      await db.execute(
+        `INSERT INTO recordings (id, song_id, section_id, title, note, file_name, mime_type, duration_ms, size_bytes, source, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [id, f.songId, f.sectionId, f.title, f.note, f.fileName, f.mimeType, f.durationMs, f.sizeBytes, f.source, now],
+      );
+      await touchSong(f.songId, now);
+      return getRecording(id);
+    },
+
+    async updateRecording(id, patch) {
+      const cols: Record<keyof typeof patch, string> = { title: "title", note: "note", sectionId: "section_id" };
+      const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => k in cols);
+      if (keys.length) {
+        const sets = keys.map((k, i) => `${cols[k]} = $${i + 1}`);
+        const values: unknown[] = keys.map((k) => patch[k]);
+        values.push(id);
+        await db.execute(`UPDATE recordings SET ${sets.join(", ")} WHERE id = $${values.length}`, values);
+      }
+      return getRecording(id);
+    },
+
+    async deleteRecording(id) {
+      await db.execute("DELETE FROM recordings WHERE id = $1", [id]);
+    },
   };
+
+  async function getRecording(id: string): Promise<Recording> {
+    const rows = await db.select<RecordingRow[]>("SELECT * FROM recordings WHERE id = $1", [id]);
+    if (!rows[0]) throw new Error("Kayıt bulunamadı");
+    return toRecording(rows[0]);
+  }
 
   async function getSection(id: string): Promise<Section> {
     const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE id = $1", [id]);

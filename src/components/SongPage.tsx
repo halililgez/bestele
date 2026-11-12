@@ -12,21 +12,18 @@ import {
 import { normalizeTag, relativeTime } from "../util";
 import { ConfirmDialog } from "./Dialog";
 import { SongSheet } from "./SongSheet";
+import { RecordingsPanel } from "./RecordingsPanel";
 
 type Tab = "bilgi" | "beste" | "kayitlar" | "gelisim";
 
 const TABS: { id: Tab; label: string; soon?: boolean }[] = [
   { id: "beste", label: "Beste sayfası" },
   { id: "bilgi", label: "Bilgiler" },
-  { id: "kayitlar", label: "Kayıtlar", soon: true },
+  { id: "kayitlar", label: "Kayıtlar" },
   { id: "gelisim", label: "Gelişim", soon: true },
 ];
 
-const SOON_TEXT: Record<Exclude<Tab, "bilgi" | "beste">, { title: string; body: string }> = {
-  kayitlar: {
-    title: "Kayıtlar",
-    body: "Mikrofondan kayıt alabilecek ya da hazır ses dosyalarını yükleyebileceksin. Her kayıt şarkıya ve istersen bir bölüme bağlanacak.",
-  },
+const SOON_TEXT: Record<Exclude<Tab, "bilgi" | "beste" | "kayitlar">, { title: string; body: string }> = {
   gelisim: {
     title: "Gelişim",
     body: "Şarkının versiyonlarını kaydedip ilk fikirden son hâline kadar olan yolculuğu, kayıtlarıyla birlikte bir zaman çizgisinde göreceksin.",
@@ -117,6 +114,8 @@ export function SongPage({ song, library, onBack }: Props) {
 
         {tab === "beste" ? (
           <SongSheet song={song} library={library} />
+        ) : tab === "kayitlar" ? (
+          <RecordingsPanel song={song} library={library} />
         ) : tab === "bilgi" ? (
           <>
             <div className="fields">

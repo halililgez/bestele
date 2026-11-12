@@ -1,4 +1,13 @@
-import type { Folder, Section, SectionFields, Song, SongFields } from "../types";
+import type {
+  Folder,
+  Recording,
+  RecordingFields,
+  RecordingPatch,
+  Section,
+  SectionFields,
+  Song,
+  SongFields,
+} from "../types";
 import { createLocalRepo } from "./localRepo";
 import { createSqlRepo } from "./sqlRepo";
 
@@ -26,13 +35,19 @@ export interface Repo {
   deleteSection(id: string): Promise<void>;
   /** Verilen sıraya göre position değerlerini yeniden yazar. */
   reorderSections(songId: string, orderedIds: string[]): Promise<void>;
+
+  /** Kayıtlar yeniden eskiye sıralı döner. Ses verisi ayrı tutulur (bkz. audioStore). */
+  listRecordings(songId: string): Promise<Recording[]>;
+  createRecording(fields: RecordingFields): Promise<Recording>;
+  updateRecording(id: string, patch: RecordingPatch): Promise<Recording>;
+  deleteRecording(id: string): Promise<void>;
 }
 
 export function newId(): string {
   return crypto.randomUUID();
 }
 
-function isTauri(): boolean {
+export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
