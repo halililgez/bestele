@@ -853,3 +853,300 @@ button {
   background: transparent;
   color: inherit;
 }
+
+/* ============ Beste sayfası ============ */
+
+.sheet-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-family: var(--font-ui);
+}
+
+.sheet-toolbar .segmented {
+  min-width: 150px;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  font-size: 13px;
+}
+
+.stepper .icon-btn {
+  width: auto;
+  min-width: 26px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stepper-label {
+  padding: 0 6px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.stepper-label strong {
+  color: var(--accent);
+}
+
+.palette {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
+}
+
+.palette-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-right: 4px;
+}
+
+.palette-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.chord-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.chord-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.chord-chip.used {
+  border-style: dashed;
+}
+
+.palette-custom {
+  margin-left: auto;
+}
+
+.palette-custom input {
+  width: 120px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  font-size: 13px;
+}
+
+.hint {
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.hint code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.section-card {
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  overflow: hidden;
+}
+
+:root[data-theme="defter"] .section-card {
+  background: rgba(255, 253, 245, 0.7);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-ui);
+}
+
+.kind-select {
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.label-input {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  outline: none;
+}
+
+.label-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.section-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+
+.section-text {
+  display: block;
+  width: 100%;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 32px;
+  resize: vertical;
+  outline: none;
+}
+
+:root[data-theme="defter"] .section-text {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  background-attachment: local;
+}
+
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+}
+
+.add-row.center {
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.add-label {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-right: 4px;
+}
+
+.sheet-empty {
+  margin-top: 30px;
+}
+
+/* Okuma görünümü: akor üstte, söz altta */
+.sheet {
+  font-size: 1em;
+}
+
+.sheet-section {
+  margin-bottom: 28px;
+}
+
+.sheet-label {
+  margin: 0 0 6px;
+  font-family: var(--font-ui);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+:root[data-theme="defter"] .sheet-label {
+  font-family: var(--font-hand);
+  font-size: 1.5em;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+}
+
+.sheet-section.kind-nakarat .sheet-text {
+  padding-left: 14px;
+  border-left: 3px solid var(--accent-soft);
+}
+
+.sheet-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+
+.tok {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.tok .c {
+  min-height: 1.35em;
+  padding-right: 0.5em;
+  font-family: var(--font-ui);
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: pre;
+}
+
+.tok .t {
+  font-size: 1.12em;
+  white-space: pre;
+}
+
+.sheet-line.no-chords .tok .c {
+  display: none;
+}
+
+.sheet-line.chords-only .tok .t {
+  display: none;
+}
+
+.sheet-line.chords-only .tok .c {
+  padding-right: 1.2em;
+}
+
+.sheet-gap {
+  height: 0.9em;
+}
