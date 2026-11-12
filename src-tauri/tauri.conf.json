@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "bestele",
+  "productName": "Bestele",
   "version": "0.1.0",
   "identifier": "com.bestele.app",
   "build": {
@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "bestele",
-        "width": 800,
-        "height": 600
+        "title": "Bestele",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 560
       }
     ],
     "security": {

@@ -1,7 +1,25 @@
-# Tauri + React + Typescript
+# Bestele
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve bir şarkının ilk fikirden son hâline kadar gelişimini tek yerde tutar.
 
-## Recommended IDE Setup
+## Teknoloji
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- **Tauri 2** (masaüstü, ileride iOS / Android)
+- **React + TypeScript + Vite** (arayüz)
+- **SQLite** (`tauri-plugin-sql`), veriler bilgisayarda yerel olarak tutulur
+
+## Çalıştırma
+
+```bash
+npm install
+npm run tauri dev   # masaüstü uygulaması
+npm run dev         # yalnızca tarayıcı önizlemesi (veriler localStorage'da)
+```
+
+## Yol haritası (ilk sürüm)
+
+- [x] Şarkı listesi, klasörler, etiketler, ton / tempo / ölçü / durum, notlar
+- [x] İki tema: Defter ve Modern
+- [ ] Beste sayfası: söz + akor, bölümler (kıta, nakarat, köprü)
+- [ ] Kayıtlar: mikrofondan kayıt ve dosya yükleme
+- [ ] Gelişim: versiyonlar ve zaman çizelgesi
