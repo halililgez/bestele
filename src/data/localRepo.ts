@@ -1,4 +1,4 @@
-import type { Folder, Section, Song } from "../types";
+import type { Folder, Recording, Section, Song } from "../types";
 import { newId, type Repo } from "./repo";
 
 /**
@@ -11,6 +11,7 @@ interface Store {
   songs: Song[];
   folders: Folder[];
   sections: Section[];
+  recordings: Recording[];
 }
 
 function load(): Store {
@@ -18,12 +19,12 @@ function load(): Store {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw) as Partial<Store>;
-      return { songs: s.songs ?? [], folders: s.folders ?? [], sections: s.sections ?? [] };
+      return { songs: s.songs ?? [], folders: s.folders ?? [], sections: s.sections ?? [], recordings: s.recordings ?? [] };
     }
   } catch {
     /* boş başla */
   }
-  return { songs: [], folders: [], sections: [] };
+  return { songs: [], folders: [], sections: [], recordings: [] };
 }
 
 function save(store: Store) {
@@ -63,6 +64,7 @@ export function createLocalRepo(): Repo {
     async deleteSong(id) {
       store.songs = store.songs.filter((s) => s.id !== id);
       store.sections = store.sections.filter((s) => s.songId !== id);
+      store.recordings = store.recordings.filter((r) => r.songId !== id);
       save(store);
     },
 
@@ -120,6 +122,7 @@ export function createLocalRepo(): Repo {
       const s = store.sections.find((x) => x.id === id);
       if (!s) return;
       store.sections = store.sections.filter((x) => x.id !== id);
+      store.recordings = store.recordings.map((r) => (r.sectionId === id ? { ...r, sectionId: null } : r));
       renumber(sectionsOf(s.songId));
       touch(s.songId, Date.now());
       save(store);
@@ -131,6 +134,35 @@ export function createLocalRepo(): Repo {
         if (s) s.position = i;
       });
       touch(songId, Date.now());
+      save(store);
+    },
+
+    async listRecordings(songId) {
+      return store.recordings
+        .filter((r) => r.songId === songId)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map((r) => ({ ...r }));
+    },
+
+    async createRecording(fields) {
+      const now = Date.now();
+      const rec: Recording = { ...fields, id: newId(), createdAt: now };
+      store.recordings.push(rec);
+      touch(fields.songId, now);
+      save(store);
+      return { ...rec };
+    },
+
+    async updateRecording(id, patch) {
+      const r = store.recordings.find((x) => x.id === id);
+      if (!r) throw new Error("Kayıt bulunamadı");
+      Object.assign(r, patch);
+      save(store);
+      return { ...r };
+    },
+
+    async deleteRecording(id) {
+      store.recordings = store.recordings.filter((r) => r.id !== id);
       save(store);
     },
   };

@@ -1150,3 +1150,228 @@ button {
 .sheet-gap {
   height: 0.9em;
 }
+
+/* ============ Kayıtlar ============ */
+
+.rec-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+}
+
+.recorder {
+  flex: 1 1 320px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-ui);
+}
+
+.rec-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: var(--paper);
+}
+
+.rec-btn:hover {
+  border-color: #d64235;
+}
+
+.rec-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #d64235;
+}
+
+.rec-square {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #d64235;
+}
+
+.recorder.recording .rec-btn {
+  border-color: #d64235;
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  50% {
+    box-shadow: 0 0 0 8px rgba(214, 66, 53, 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recorder.recording .rec-btn {
+    animation: none;
+  }
+}
+
+.rec-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-status {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.rec-time {
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.meter {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: #4c8a4a;
+  transition: width 60ms linear;
+}
+
+.meter-fill[data-hot] {
+  background: #d64235;
+}
+
+.rec-error {
+  margin-top: 6px;
+  color: #c0392b;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.rec-options {
+  flex: 0 1 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.rec-filter {
+  margin-bottom: 14px;
+  font-family: var(--font-ui);
+}
+
+.rec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-item {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+
+:root[data-theme="defter"] .rec-item {
+  background: rgba(255, 253, 245, 0.75);
+}
+
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.play-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 15px;
+  padding-left: 3px;
+}
+
+.rec-audio {
+  flex: 0 1 300px;
+  height: 40px;
+}
+
+.rec-main {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.rec-title {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  padding: 0;
+  outline: none;
+}
+
+.rec-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.badge {
+  padding: 0 6px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.rec-section {
+  flex: 0 0 auto;
+  font-size: 13px;
+  padding: 5px 8px;
+}
+
+.rec-note {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.rec-note:hover,
+.rec-note:focus {
+  border-color: var(--border);
+  background: var(--input-bg);
+}
