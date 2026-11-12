@@ -25,6 +25,37 @@ export interface Folder {
   createdAt: number;
 }
 
+export type SectionKind = "giris" | "kita" | "onnakarat" | "nakarat" | "kopru" | "solo" | "ara" | "final" | "diger";
+
+export interface Section {
+  id: string;
+  songId: string;
+  kind: SectionKind;
+  /** Boşsa tür adından otomatik üretilir (ör. "Kıta 2") */
+  label: string;
+  /** Söz + satır içi akor: "[Am]Gece ya[F]rısı" */
+  content: string;
+  position: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type SectionFields = Pick<Section, "kind" | "label" | "content">;
+
+export const SECTION_LABELS: Record<SectionKind, string> = {
+  giris: "Giriş",
+  kita: "Kıta",
+  onnakarat: "Ön nakarat",
+  nakarat: "Nakarat",
+  kopru: "Köprü",
+  solo: "Solo",
+  ara: "Ara müzik",
+  final: "Final",
+  diger: "Bölüm",
+};
+
+export const SECTION_ORDER: SectionKind[] = ["giris", "kita", "onnakarat", "nakarat", "kopru", "solo", "ara", "final", "diger"];
+
 export const STATUS_LABELS: Record<SongStatus, string> = {
   fikir: "Fikir",
   taslak: "Taslak",

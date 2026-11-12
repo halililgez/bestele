@@ -11,21 +11,18 @@ import {
 } from "../types";
 import { normalizeTag, relativeTime } from "../util";
 import { ConfirmDialog } from "./Dialog";
+import { SongSheet } from "./SongSheet";
 
 type Tab = "bilgi" | "beste" | "kayitlar" | "gelisim";
 
 const TABS: { id: Tab; label: string; soon?: boolean }[] = [
+  { id: "beste", label: "Beste sayfası" },
   { id: "bilgi", label: "Bilgiler" },
-  { id: "beste", label: "Beste sayfası", soon: true },
   { id: "kayitlar", label: "Kayıtlar", soon: true },
   { id: "gelisim", label: "Gelişim", soon: true },
 ];
 
-const SOON_TEXT: Record<Exclude<Tab, "bilgi">, { title: string; body: string }> = {
-  beste: {
-    title: "Beste sayfası",
-    body: "Sözleri yazıp akorları kelimelerin üstüne yerleştireceğin, kıta / nakarat / köprü bölümlerine ayırabileceğin sayfa. Sıradaki adımda geliyor.",
-  },
+const SOON_TEXT: Record<Exclude<Tab, "bilgi" | "beste">, { title: string; body: string }> = {
   kayitlar: {
     title: "Kayıtlar",
     body: "Mikrofondan kayıt alabilecek ya da hazır ses dosyalarını yükleyebileceksin. Her kayıt şarkıya ve istersen bir bölüme bağlanacak.",
@@ -45,7 +42,7 @@ interface Props {
 }
 
 export function SongPage({ song, library, onBack }: Props) {
-  const [tab, setTab] = useState<Tab>("bilgi");
+  const [tab, setTab] = useState<Tab>("beste");
   const [draft, setDraft] = useState<Song>(song);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const pending = useRef<Partial<SongFields>>({});
@@ -55,9 +52,14 @@ export function SongPage({ song, library, onBack }: Props) {
   // Başka bir şarkıya geçildiğinde taslağı sıfırla
   useEffect(() => {
     setDraft(song);
-    setTab("bilgi");
+    setTab("beste");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.id]);
+
+  // Ton başka yerden (ör. beste sayfasında transpoze) değişirse taslağa yansıt
+  useEffect(() => {
+    setDraft((d) => (d.musicalKey === song.musicalKey ? d : { ...d, musicalKey: song.musicalKey }));
+  }, [song.musicalKey]);
 
   // Sayfadan çıkarken bekleyen değişiklikleri hemen kaydet
   useEffect(() => {
@@ -113,7 +115,9 @@ export function SongPage({ song, library, onBack }: Props) {
           ))}
         </div>
 
-        {tab === "bilgi" ? (
+        {tab === "beste" ? (
+          <SongSheet song={song} library={library} />
+        ) : tab === "bilgi" ? (
           <>
             <div className="fields">
               <label className="field">
