@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { Folder, Song, SongFields, SongStatus } from "../types";
+import type { Folder, Section, SectionKind, Song, SongFields, SongStatus } from "../types";
 import { newId, type Repo } from "./repo";
 
 interface SongRow {
@@ -44,7 +44,43 @@ const MIGRATIONS: string[] = [
      created_at INTEGER NOT NULL,
      updated_at INTEGER NOT NULL
    );`,
+  // 2: Beste sayfası bölümleri
+  `CREATE TABLE IF NOT EXISTS sections (
+     id TEXT PRIMARY KEY,
+     song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+     kind TEXT NOT NULL DEFAULT 'kita',
+     label TEXT NOT NULL DEFAULT '',
+     content TEXT NOT NULL DEFAULT '',
+     position INTEGER NOT NULL,
+     created_at INTEGER NOT NULL,
+     updated_at INTEGER NOT NULL
+   );
+   CREATE INDEX IF NOT EXISTS idx_sections_song ON sections(song_id, position);`,
 ];
+
+interface SectionRow {
+  id: string;
+  song_id: string;
+  kind: string;
+  label: string;
+  content: string;
+  position: number;
+  created_at: number;
+  updated_at: number;
+}
+
+function toSection(r: SectionRow): Section {
+  return {
+    id: r.id,
+    songId: r.song_id,
+    kind: r.kind as SectionKind,
+    label: r.label,
+    content: r.content,
+    position: r.position,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
 
 async function migrate(db: Database) {
   const rows = await db.select<{ user_version: number }[]>("PRAGMA user_version");
@@ -139,6 +175,7 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async deleteSong(id) {
+      await db.execute("DELETE FROM sections WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM songs WHERE id = $1", [id]);
     },
 
@@ -165,5 +202,68 @@ export async function createSqlRepo(): Promise<Repo> {
       await db.execute("UPDATE songs SET folder_id = NULL WHERE folder_id = $1", [id]);
       await db.execute("DELETE FROM folders WHERE id = $1", [id]);
     },
+
+    async listSections(songId) {
+      const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
+      return rows.map(toSection);
+    },
+
+    async createSection(songId, fields, index) {
+      const existing = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
+      const at = index === undefined ? existing.length : Math.max(0, Math.min(index, existing.length));
+      // Araya ekleniyorsa sonrakileri bir kaydır
+      for (let i = existing.length - 1; i >= at; i--) {
+        await db.execute("UPDATE sections SET position = $1 WHERE id = $2", [i + 1, existing[i].id]);
+      }
+      const id = newId();
+      const now = Date.now();
+      await db.execute(
+        "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        [id, songId, fields.kind, fields.label, fields.content, at, now, now],
+      );
+      await touchSong(songId, now);
+      return getSection(id);
+    },
+
+    async updateSection(id, patch) {
+      const now = Date.now();
+      const cols: Record<keyof typeof patch, string> = { kind: "kind", label: "label", content: "content" };
+      const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => k in cols);
+      const sets = keys.map((k, i) => `${cols[k]} = $${i + 1}`);
+      const values: unknown[] = keys.map((k) => patch[k]);
+      sets.push(`updated_at = $${values.length + 1}`);
+      values.push(now, id);
+      await db.execute(`UPDATE sections SET ${sets.join(", ")} WHERE id = $${values.length}`, values);
+      const section = await getSection(id);
+      await touchSong(section.songId, now);
+      return section;
+    },
+
+    async deleteSection(id) {
+      const section = await getSection(id);
+      await db.execute("DELETE FROM sections WHERE id = $1", [id]);
+      const rest = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [section.songId]);
+      for (let i = 0; i < rest.length; i++) {
+        if (rest[i].position !== i) await db.execute("UPDATE sections SET position = $1 WHERE id = $2", [i, rest[i].id]);
+      }
+      await touchSong(section.songId, Date.now());
+    },
+
+    async reorderSections(songId, orderedIds) {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await db.execute("UPDATE sections SET position = $1 WHERE id = $2 AND song_id = $3", [i, orderedIds[i], songId]);
+      }
+      await touchSong(songId, Date.now());
+    },
   };
+
+  async function getSection(id: string): Promise<Section> {
+    const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE id = $1", [id]);
+    if (!rows[0]) throw new Error("Bölüm bulunamadı");
+    return toSection(rows[0]);
+  }
+
+  async function touchSong(songId: string, now: number) {
+    await db.execute("UPDATE songs SET updated_at = $1 WHERE id = $2", [now, songId]);
+  }
 }

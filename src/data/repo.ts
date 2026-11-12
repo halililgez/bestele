@@ -1,4 +1,4 @@
-import type { Folder, Song, SongFields } from "../types";
+import type { Folder, Section, SectionFields, Song, SongFields } from "../types";
 import { createLocalRepo } from "./localRepo";
 import { createSqlRepo } from "./sqlRepo";
 
@@ -17,6 +17,15 @@ export interface Repo {
   renameFolder(id: string, name: string): Promise<void>;
   /** Klasör silinince içindeki şarkılar "klasörsüz" kalır, silinmez. */
   deleteFolder(id: string): Promise<void>;
+
+  /** Bölümler `position` sırasıyla döner. */
+  listSections(songId: string): Promise<Section[]>;
+  /** `index` verilmezse sona eklenir. */
+  createSection(songId: string, fields: SectionFields, index?: number): Promise<Section>;
+  updateSection(id: string, patch: Partial<SectionFields>): Promise<Section>;
+  deleteSection(id: string): Promise<void>;
+  /** Verilen sıraya göre position değerlerini yeniden yazar. */
+  reorderSections(songId: string, orderedIds: string[]): Promise<void>;
 }
 
 export function newId(): string {

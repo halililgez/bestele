@@ -101,8 +101,15 @@ export function useLibrary() {
     [guard],
   );
 
+  /** Bölüm gibi alt veriler değişince şarkının "son değişiklik" zamanını ekranda tazeler. */
+  const markTouched = useCallback((id: string) => {
+    const now = Date.now();
+    setSongs((prev) => prev.map((s) => (s.id === id ? { ...s, updatedAt: now } : s)));
+  }, []);
+
   return {
     ready: repo !== null,
+    markTouched,
     storage: repo?.kind ?? null,
     songs,
     folders,
