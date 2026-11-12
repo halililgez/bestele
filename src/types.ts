@@ -42,6 +42,26 @@ export interface Section {
 
 export type SectionFields = Pick<Section, "kind" | "label" | "content">;
 
+export interface Recording {
+  id: string;
+  songId: string;
+  /** Kayıt belirli bir bölüme aitse o bölüm; değilse bütün şarkı */
+  sectionId: string | null;
+  title: string;
+  note: string;
+  /** Ses dosyasının depodaki adı (ör. "<uuid>.webm") */
+  fileName: string;
+  mimeType: string;
+  durationMs: number | null;
+  sizeBytes: number;
+  /** "kayit" = uygulamada kaydedildi, "dosya" = dışarıdan yüklendi */
+  source: "kayit" | "dosya";
+  createdAt: number;
+}
+
+export type RecordingFields = Omit<Recording, "id" | "createdAt">;
+export type RecordingPatch = Partial<Pick<Recording, "title" | "note" | "sectionId">>;
+
 export const SECTION_LABELS: Record<SectionKind, string> = {
   giris: "Giriş",
   kita: "Kıta",
