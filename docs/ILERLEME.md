@@ -21,6 +21,7 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 | 5 | Prova araçları: metronom + tap tempo, sahne modu, sözlerde arama | ✅ PR merge edildi |
 | 6 | Kayıt dalga formu ve kırpma | ✅ PR merge edildi |
 | 7 | Gitar akor şemaları | ✅ PR merge edildi |
+| 8 | SQLite deposu için gerçek SQLite testleri | ✅ PR merge edildi |
 
 ## Günlük
 
@@ -33,10 +34,11 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 - **2026-11-13 ~04:30:** Masaüstü veritabanı salt okunur incelendi: `user_version = 4`, 5 tablo mevcut (migration'lar gerçek uygulamada çalışıyor). Faz 5 bitti: `src/metronome.ts` (lookahead zamanlayıcı, `bpmFromTaps`, `beatsPerBar`; + testler), `MetronomeControl` (Beste sayfasında; tempo şarkıya kaydedilir), `StageMode` (tam ekran, otomatik kaydırma, klavye), `lyricsIndex` + sözlerde arama, `searchFold` (Türkçe karakter duyarsız arama; + testler). Toplam 31 birim testi.
 - **2026-11-13 ~04:45:** Faz 6 bitti: `src/audioTools.ts` (`computePeaks`, `encodeWav`, `formatTime`; + testler), `WaveformEditor` (Kayıtlar'da 〰 düğmesi: dalga formu, tıkla-çal, sürükle-seç, seçimi dinle, seçimi yeni WAV kaydı olarak kaydet; orijinal korunur, bölüm bağlantısı aktarılır). Toplam 37 birim testi. 06:02 job'ı güncellendi (Faz 6-7).
 - **2026-11-13 ~05:00:** Faz 7 bitti: `src/guitarChords.ts` (açık akor tablosu + E/A şekli barre; tanınmayan nitelikler basitleştirilir; + testler), `ChordDiagram` / `ChordStrip` (SVG), Oku görünümünde "Akor şemaları" düğmesi (tercih hatırlanır, transpozeye uyar, baskıda görünür). Toplam 44 birim testi.
+- **2026-11-13 ~05:15:** Faz 8 bitti: `src/data/sqlRepo.test.ts` — `@tauri-apps/plugin-sql` vitest ile taklit edilip `node:sqlite` (bellekte) üzerinde bütün SQLite deposu çalıştırılıyor: migration'lar, şarkı/klasör, bölümler (araya ekleme, sıralama, silme), kayıtlar, versiyonlar + geri dönme, şarkı silme, yedekten içe aktarma. Testler `tsconfig.test.json` ile ayrıca tip kontrolünden geçiyor (`npm run build` ikisini de çalıştırır; `@types/node` eklendi). Toplam 51 birim testi.
 
 ## Sonraki fikirler (henüz yapılmadı)
 
-- Masaüstünde elle doğrulama: mikrofon kaydı, dosya indirme (yedek / .txt) ve yazdırma WebView2'de; SQLite'ta ekleme/düzenleme akışları.
+- Masaüstünde elle doğrulama: mikrofon kaydı, dosya indirme (yedek / .txt) ve yazdırma WebView2'de.
 - Piyano akor şemaları; gitar için capo desteği.
 - Kayıt dinlerken eşzamanlı söz takibi.
 - Mobil sürüm (Tauri 2 iOS/Android).

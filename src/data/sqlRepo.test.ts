@@ -1,0 +1,182 @@
+/**
+ * Masaüstündeki SQLite deposunu gerçek bir SQLite üzerinde (node:sqlite, bellekte) çalıştırır.
+ * tauri-plugin-sql yalnızca uygulama içinde çalıştığı için onun yerine aynı arayüzü sunan küçük bir adaptör kullanılır.
+ */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DatabaseSync } from "node:sqlite";
+import { emptySong } from "../types";
+
+let current: DatabaseSync;
+
+/** tauri-plugin-sql'in `$1, $2…` yer tutucularını SQLite'ın konumsal bağlamasıyla eşler. */
+class FakeDatabase {
+  constructor(private db: DatabaseSync) {}
+  static async load() {
+    return new FakeDatabase(current);
+  }
+  private bind(values: unknown[]) {
+    // "$1" → values[0] … (node:sqlite adlandırılmış parametreleri nesneyle bağlar)
+    return [Object.fromEntries(values.map((v, i) => [`$${i + 1}`, v === undefined ? null : v]))] as never[];
+  }
+  async execute(sql: string, values: unknown[] = []) {
+    const st = this.db.prepare(sql);
+    const r = values.length ? st.run(...this.bind(values)) : st.run();
+    return { rowsAffected: Number(r.changes), lastInsertId: Number(r.lastInsertRowid) };
+  }
+  async select<T>(sql: string, values: unknown[] = []): Promise<T> {
+    const st = this.db.prepare(sql);
+    return (values.length ? st.all(...this.bind(values)) : st.all()) as T;
+  }
+}
+
+vi.mock("@tauri-apps/plugin-sql", () => ({ default: FakeDatabase }));
+
+const { createSqlRepo } = await import("./sqlRepo");
+
+beforeEach(() => {
+  current = new DatabaseSync(":memory:");
+});
+
+describe("SQLite deposu", () => {
+  it("migration'ları çalıştırır ve sürümü yazar", async () => {
+    await createSqlRepo();
+    const v = current.prepare("PRAGMA user_version").get() as { user_version: number };
+    expect(v.user_version).toBe(4);
+    const tables = (current.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[]).map(
+      (t) => t.name,
+    );
+    expect(tables).toEqual(["folders", "recordings", "sections", "songs", "versions"]);
+    // İkinci açılışta migration tekrar çalışmamalı
+    await createSqlRepo();
+  });
+
+  it("şarkı ve klasör işlemleri", async () => {
+    const repo = await createSqlRepo();
+    const folder = await repo.createFolder("Albüm");
+    const song = await repo.createSong({ ...emptySong("Gece"), tags: ["akustik", "aşk"], folderId: folder.id, tempo: 92 });
+    expect(song.tags).toEqual(["akustik", "aşk"]);
+    expect(song.tempo).toBe(92);
+
+    const updated = await repo.updateSong(song.id, { title: "Gece Treni", musicalKey: "Am", tempo: null });
+    expect(updated.title).toBe("Gece Treni");
+    expect(updated.musicalKey).toBe("Am");
+    expect(updated.tempo).toBeNull();
+    expect(updated.updatedAt).toBeGreaterThanOrEqual(song.updatedAt);
+
+    await repo.renameFolder(folder.id, "İlk albüm");
+    expect((await repo.listFolders())[0].name).toBe("İlk albüm");
+
+    await repo.deleteFolder(folder.id);
+    expect((await repo.listSongs())[0].folderId).toBeNull();
+  });
+
+  it("bölümler: ekleme, araya ekleme, sıralama, silme", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Şarkı"));
+    const a = await repo.createSection(song.id, { kind: "kita", label: "", content: "[Am]a" });
+    const c = await repo.createSection(song.id, { kind: "nakarat", label: "", content: "c" });
+    const b = await repo.createSection(song.id, { kind: "kopru", label: "", content: "b" }, 1);
+    expect((await repo.listSections(song.id)).map((s) => s.id)).toEqual([a.id, b.id, c.id]);
+
+    const upd = await repo.updateSection(b.id, { content: "[F]b2", label: "Köprü!" });
+    expect(upd.content).toBe("[F]b2");
+    expect(upd.label).toBe("Köprü!");
+
+    await repo.reorderSections(song.id, [c.id, a.id, b.id]);
+    expect((await repo.listSections(song.id)).map((s) => s.id)).toEqual([c.id, a.id, b.id]);
+
+    await repo.deleteSection(a.id);
+    const rest = await repo.listSections(song.id);
+    expect(rest.map((s) => [s.id, s.position])).toEqual([
+      [c.id, 0],
+      [b.id, 1],
+    ]);
+
+    expect(await repo.lyricsIndex()).toEqual({ [song.id]: "c\n[F]b2" });
+  });
+
+  it("kayıtlar: bölüm silinince bağlantı kalkar", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Şarkı"));
+    const sec = await repo.createSection(song.id, { kind: "kita", label: "", content: "" });
+    const rec = await repo.createRecording({
+      songId: song.id,
+      sectionId: sec.id,
+      title: "Deneme",
+      note: "",
+      fileName: "x.webm",
+      mimeType: "audio/webm",
+      durationMs: 1500,
+      sizeBytes: 1000,
+      source: "kayit",
+    });
+    expect(rec.durationMs).toBe(1500);
+    expect((await repo.updateRecording(rec.id, { title: "Riff", note: "gitar" })).title).toBe("Riff");
+    await repo.deleteSection(sec.id);
+    expect((await repo.listRecordings(song.id))[0].sectionId).toBeNull();
+    await repo.deleteRecording(rec.id);
+    expect(await repo.listRecordings(song.id)).toEqual([]);
+  });
+
+  it("versiyonlar ve geri dönme (bölüm kimlikleri korunur)", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Şarkı"));
+    const s1 = await repo.createSection(song.id, { kind: "kita", label: "", content: "eski" });
+    const s2 = await repo.createSection(song.id, { kind: "nakarat", label: "", content: "nakarat" });
+    const v = await repo.createVersion({
+      songId: song.id,
+      name: "İlk",
+      note: "",
+      stage: "taslak",
+      recordingIds: ["r1"],
+      snapshot: { title: "Şarkı", musicalKey: "Am", tempo: 90, timeSignature: "4/4", sections: [{ kind: "kita", label: "", content: "eski" }] },
+    });
+    expect(v.snapshot.sections).toHaveLength(1);
+    expect(v.recordingIds).toEqual(["r1"]);
+    expect((await repo.updateVersion(v.id, { name: "İlk taslak", recordingIds: [] })).recordingIds).toEqual([]);
+
+    await repo.updateSection(s1.id, { content: "yeni" });
+    const restored = await repo.replaceSections(song.id, v.snapshot.sections);
+    expect(restored).toHaveLength(1);
+    expect(restored[0].id).toBe(s1.id);
+    expect(restored[0].content).toBe("eski");
+    expect((await repo.listSections(song.id)).some((s) => s.id === s2.id)).toBe(false);
+
+    await repo.deleteVersion(v.id);
+    expect(await repo.listVersions(song.id)).toEqual([]);
+  });
+
+  it("şarkı silinince bağlı her şey silinir", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Şarkı"));
+    await repo.createSection(song.id, { kind: "kita", label: "", content: "x" });
+    await repo.createVersion({
+      songId: song.id,
+      name: "v",
+      note: "",
+      stage: "fikir",
+      recordingIds: [],
+      snapshot: { title: "", musicalKey: "", tempo: null, timeSignature: "4/4", sections: [] },
+    });
+    await repo.deleteSong(song.id);
+    for (const t of ["songs", "sections", "versions", "recordings"]) {
+      expect((current.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get() as { n: number }).n).toBe(0);
+    }
+  });
+
+  it("yedekten içe aktarma var olanları atlar", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Var olan"));
+    const data = {
+      folders: [],
+      songs: [song, { ...song, id: "yeni-1", title: "Yeni" }],
+      sections: [{ id: "sec-1", songId: "yeni-1", kind: "kita" as const, label: "", content: "x", position: 0, createdAt: 1, updatedAt: 1 }],
+      recordings: [],
+      versions: [],
+    };
+    expect(await repo.importRecords(data)).toBe(1);
+    expect((await repo.listSongs()).map((s) => s.title).sort()).toEqual(["Var olan", "Yeni"]);
+    expect(await repo.listSections("yeni-1")).toHaveLength(1);
+    expect(await repo.importRecords(data)).toBe(0);
+  });
+});
