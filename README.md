@@ -71,3 +71,13 @@ gh release create v<sürüm> src-tauri/target/release/bundle/nsis/Bestele_<sür�
 ```
 
 Geliştirme notları ve fazlar için: [docs/ILERLEME.md](docs/ILERLEME.md)
+
+## Katkıda bulunma
+
+Hata bildirimleri, öneriler ve pull request'ler memnuniyetle karşılanır. Ayrıntılar için: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Lisans
+
+Copyright (C) 2026 Halil İlgez
+
+Bestele özgür bir yazılımdır: [GNU Genel Kamu Lisansı sürüm 3](LICENSE) (GPL-3.0) koşulları altında kullanabilir, değiştirebilir ve dağıtabilirsin. Bestele'den türetilen ve dağıtılan her yazılım da aynı lisansla, kaynak koduyla birlikte yayınlanmak zorundadır. Yazılım hiçbir garanti olmaksızın sunulur.
