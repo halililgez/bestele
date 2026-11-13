@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Bestele uygulama ikonu: çizgili defter sayfası ve nota -->
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="#a8402b"/>
+  <g transform="rotate(-6 512 512)">
+    <rect x="232" y="168" width="560" height="700" rx="36" fill="#000" opacity="0.18" transform="translate(14 18)"/>
+    <rect x="232" y="168" width="560" height="700" rx="36" fill="#fbf6ea"/>
+    <g stroke="#7f9cc4" stroke-width="10" opacity="0.55">
+      <line x1="232" y1="330" x2="792" y2="330"/>
+      <line x1="232" y1="420" x2="792" y2="420"/>
+      <line x1="232" y1="510" x2="792" y2="510"/>
+      <line x1="232" y1="600" x2="792" y2="600"/>
+      <line x1="232" y1="690" x2="792" y2="690"/>
+      <line x1="232" y1="780" x2="792" y2="780"/>
+    </g>
+    <line x1="330" y1="168" x2="330" y2="868" stroke="#d4574a" stroke-width="10" opacity="0.8"/>
+    <!-- sekizlik nota -->
+    <g fill="#2c2a33">
+      <ellipse cx="500" cy="680" rx="92" ry="68" transform="rotate(-22 500 680)"/>
+      <rect x="570" y="300" width="34" height="380" rx="12"/>
+      <path d="M594 300 C 650 330 720 360 700 470 C 690 420 650 400 594 392 Z"/>
+    </g>
+  </g>
+</svg>

@@ -47,6 +47,20 @@ export function SongPage({ song, library, onBack }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.id]);
 
+  // Ctrl+1..4: sekmeler arasında geç
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay")) return;
+      const i = Number(e.key) - 1;
+      if (i >= 0 && i < TABS.length) {
+        e.preventDefault();
+        setTab(TABS[i].id);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // Ton başka yerden (ör. beste sayfasında transpoze) değişirse taslağa yansıt
   useEffect(() => {
     setDraft((d) => (d.musicalKey === song.musicalKey ? d : { ...d, musicalKey: song.musicalKey }));

@@ -1,8 +1,18 @@
 import { useMemo, useState } from "react";
 import type { Library } from "../useLibrary";
 import { THEME_LABELS, type Theme } from "../theme";
-import { ConfirmDialog } from "./Dialog";
+import { ConfirmDialog, Dialog } from "./Dialog";
+import { BackupControls } from "./BackupControls";
 import type { Folder } from "../types";
+
+export const SHORTCUTS: [string, string][] = [
+  ["Ctrl + N", "Yeni şarkı"],
+  ["Ctrl + F", "Şarkılarda ara"],
+  ["Esc", "Şarkıdan listeye dön"],
+  ["Ctrl + 1 … 4", "Şarkıda sekme değiştir (Beste, Kayıtlar, Gelişim, Bilgiler)"],
+  ["Ctrl + E", "Beste sayfasında Yaz / Oku arasında geç"],
+  ["Ctrl + P", "Beste sayfasını yazdır (Oku görünümü)"],
+];
 
 export type LibraryFilter =
   | { kind: "all" }
@@ -23,6 +33,7 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Folder | null>(null);
+  const [showKeys, setShowKeys] = useState(false);
 
   const folderCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -135,10 +146,34 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
             </button>
           ))}
         </div>
+        <BackupControls library={library} />
+        <button className="link-btn shortcuts-btn" onClick={() => setShowKeys(true)}>
+          Klavye kısayolları
+        </button>
         {library.storage === "browser" && (
           <div className="storage-note">Tarayıcı önizlemesi: veriler yalnızca bu tarayıcıda tutulur.</div>
         )}
       </div>
+
+      {showKeys && (
+        <Dialog title="Klavye kısayolları" onClose={() => setShowKeys(false)}>
+          <dl className="keys">
+            {SHORTCUTS.map(([k, d]) => (
+              <div key={k}>
+                <dt>
+                  <kbd>{k}</kbd>
+                </dt>
+                <dd>{d}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="dialog-actions">
+            <button className="btn btn-primary" autoFocus onClick={() => setShowKeys(false)}>
+              Tamam
+            </button>
+          </div>
+        </Dialog>
+      )}
 
       {deleting && (
         <ConfirmDialog

@@ -107,6 +107,18 @@ export function useLibrary() {
     [guard],
   );
 
+  /** Yedekten yükleme gibi toplu değişikliklerden sonra listeyi depodan yeniden okur. */
+  const reload = useCallback(async () => {
+    try {
+      const r = await getRepo();
+      const [s, f] = await Promise.all([r.listSongs(), r.listFolders()]);
+      setSongs(s);
+      setFolders(f);
+    } catch (e) {
+      setError(String(e));
+    }
+  }, []);
+
   /** Bölüm gibi alt veriler değişince şarkının "son değişiklik" zamanını ekranda tazeler. */
   const markTouched = useCallback((id: string) => {
     const now = Date.now();
@@ -116,6 +128,7 @@ export function useLibrary() {
   return {
     ready: repo !== null,
     markTouched,
+    reload,
     storage: repo?.kind ?? null,
     songs,
     folders,

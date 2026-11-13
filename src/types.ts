@@ -87,6 +87,22 @@ export interface Version {
 export type VersionFields = Omit<Version, "id" | "createdAt">;
 export type VersionPatch = Partial<Pick<Version, "name" | "note" | "stage" | "recordingIds">>;
 
+/** Yedek dosyasının içeriği (ses dosyaları base64 olarak ayrıca `audio` alanında) */
+export interface BackupRecords {
+  folders: Folder[];
+  songs: Song[];
+  sections: Section[];
+  recordings: Recording[];
+  versions: Version[];
+}
+
+export interface BackupFile extends BackupRecords {
+  app: "bestele";
+  format: 1;
+  exportedAt: number;
+  audio: Record<string, string>;
+}
+
 export const SECTION_LABELS: Record<SectionKind, string> = {
   giris: "Giriş",
   kita: "Kıta",

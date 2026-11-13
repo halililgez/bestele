@@ -3,7 +3,7 @@ import type { Library } from "../useLibrary";
 import type { Recording, Section, Song } from "../types";
 import { useSections } from "../useSections";
 import { formatDuration, formatSize, measureDuration, useRecordings } from "../useRecordings";
-import { sectionTitle } from "./SongSheet";
+import { sectionTitle } from "../sectionTitle";
 import { Recorder } from "./Recorder";
 import { ConfirmDialog } from "./Dialog";
 

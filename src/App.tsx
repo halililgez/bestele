@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLibrary } from "./useLibrary";
 import { useTheme } from "./theme";
 import { Sidebar, type LibraryFilter } from "./components/Sidebar";
@@ -14,6 +14,27 @@ export default function App() {
   const [creating, setCreating] = useState(false);
 
   const openSong = openId ? library.songs.find((s) => s.id === openId) : undefined;
+
+  // Genel kısayollar (diyalog açıkken devre dışı; diyaloglar kendi Esc'lerini yönetir)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (document.querySelector(".overlay")) return;
+      const ctrl = e.ctrlKey || e.metaKey;
+      const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]");
+      if (ctrl && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        setCreating(true);
+      } else if (ctrl && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setOpenId(null);
+        window.setTimeout(() => document.querySelector<HTMLInputElement>(".search")?.focus(), 0);
+      } else if (e.key === "Escape" && !typing && openId) {
+        setOpenId(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openId]);
 
   return (
     <div className="app">
