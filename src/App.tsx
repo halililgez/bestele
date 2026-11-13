@@ -5,8 +5,10 @@ import { Sidebar, type LibraryFilter } from "./components/Sidebar";
 import { SongLibrary } from "./components/SongLibrary";
 import { SongPage } from "./components/SongPage";
 import { NewSongDialog } from "./components/NewSongDialog";
+import { useT } from "./i18n";
 
 export default function App() {
+  const t = useT();
   const library = useLibrary();
   const [theme, setTheme] = useTheme();
   const [filter, setFilter] = useState<LibraryFilter>({ kind: "all" });
@@ -72,8 +74,8 @@ export default function App() {
 
       {library.error && (
         <div className="toast" role="alert">
-          <span>Bir sorun oldu: {library.error}</span>
-          <button onClick={library.clearError} aria-label="Kapat">
+          <span>{t.common.problem(library.error)}</span>
+          <button onClick={library.clearError} aria-label={t.common.close}>
             ×
           </button>
         </div>

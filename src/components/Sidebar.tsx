@@ -1,21 +1,11 @@
 import { useMemo, useState } from "react";
 import type { Library } from "../useLibrary";
-import { THEME_LABELS, type Theme } from "../theme";
+import { THEMES, type Theme } from "../theme";
+import { LOCALES, RichText, useLocale, useT } from "../i18n";
+import { compareText } from "../util";
 import { ConfirmDialog, Dialog } from "./Dialog";
 import { BackupControls } from "./BackupControls";
 import type { Folder } from "../types";
-
-export const SHORTCUTS: [string, string][] = [
-  ["Ctrl + N", "Yeni şarkı"],
-  ["Ctrl + F", "Şarkılarda ara"],
-  ["Esc", "Şarkıdan listeye dön"],
-  ["Ctrl + 1 … 4", "Şarkıda sekme değiştir (Beste, Kayıtlar, Gelişim, Bilgiler)"],
-  ["Ctrl + E", "Beste sayfasında Yaz / Oku arasında geç"],
-  ["Ctrl + P", "Beste sayfasını yazdır (Oku görünümü)"],
-  ["Boşluk", "Sahne modunda otomatik kaydırmayı başlat / durdur"],
-  ["↑ ↓", "Sahne modunda kaydırma hızı"],
-  ["+ −", "Sahne modunda yazı boyutu"],
-];
 
 export type LibraryFilter =
   | { kind: "all" }
@@ -32,6 +22,8 @@ interface Props {
 }
 
 export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
+  const t = useT();
+  const { locale, setLocale } = useLocale();
   const { songs, folders } = library;
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -47,7 +39,7 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
   const tags = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of songs) for (const t of s.tags) m.set(t, (m.get(t) ?? 0) + 1);
-    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], "tr"));
+    return [...m.entries()].sort((a, b) => compareText(a[0], b[0]));
   }, [songs]);
 
   const unfiled = songs.filter((s) => !s.folderId).length;
@@ -71,27 +63,27 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
     <aside className="sidebar">
       <h1 className="brand">
         Bestele
-        <span className="brand-sub">Beste defteri</span>
+        <span className="brand-sub">{t.sidebar.tagline}</span>
       </h1>
 
       <nav className="side-section">
         <button className={`side-item ${is({ kind: "all" }) ? "active" : ""}`} onClick={() => onFilter({ kind: "all" })}>
-          <span className="label">Tüm şarkılar</span>
+          <span className="label">{t.sidebar.allSongs}</span>
           <span className="count">{songs.length}</span>
         </button>
         <button
           className={`side-item ${is({ kind: "unfiled" }) ? "active" : ""}`}
           onClick={() => onFilter({ kind: "unfiled" })}
         >
-          <span className="label">Klasörsüz</span>
+          <span className="label">{t.common.unfiled}</span>
           <span className="count">{unfiled}</span>
         </button>
       </nav>
 
       <section className="side-section">
         <div className="side-heading">
-          <span>Klasörler</span>
-          <button className="icon-btn" title="Yeni klasör" aria-label="Yeni klasör" onClick={() => setAdding(true)}>
+          <span>{t.sidebar.folders}</span>
+          <button className="icon-btn" title={t.sidebar.newFolder} aria-label={t.sidebar.newFolder} onClick={() => setAdding(true)}>
             +
           </button>
         </div>
@@ -109,24 +101,24 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
                 <span className="count">{folderCounts.get(f.id) ?? 0}</span>
               </button>
               <span className="row-actions">
-                <button className="icon-btn" title="Yeniden adlandır" aria-label="Yeniden adlandır" onClick={() => setEditing(f.id)}>
+                <button className="icon-btn" title={t.sidebar.rename} aria-label={t.sidebar.rename} onClick={() => setEditing(f.id)}>
                   ✎
                 </button>
-                <button className="icon-btn" title="Klasörü sil" aria-label="Klasörü sil" onClick={() => setDeleting(f)}>
+                <button className="icon-btn" title={t.sidebar.deleteFolder} aria-label={t.sidebar.deleteFolder} onClick={() => setDeleting(f)}>
                   ×
                 </button>
               </span>
             </div>
           ),
         )}
-        {adding && <InlineInput initial="" placeholder="Klasör adı" onDone={submitNew} />}
-        {folders.length === 0 && !adding && <div className="side-empty">Henüz klasör yok</div>}
+        {adding && <InlineInput initial="" placeholder={t.sidebar.folderName} onDone={submitNew} />}
+        {folders.length === 0 && !adding && <div className="side-empty">{t.sidebar.noFolders}</div>}
       </section>
 
       {tags.length > 0 && (
         <section className="side-section">
           <div className="side-heading">
-            <span>Etiketler</span>
+            <span>{t.sidebar.tags}</span>
           </div>
           {tags.map(([tag, count]) => (
             <button
@@ -142,26 +134,40 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
       )}
 
       <div className="sidebar-footer">
-        <div className="segmented" role="radiogroup" aria-label="Tema">
-          {(Object.keys(THEME_LABELS) as Theme[]).map((t) => (
-            <button key={t} role="radio" aria-checked={theme === t} className={theme === t ? "on" : ""} onClick={() => onTheme(t)}>
-              {THEME_LABELS[t]}
+        <div className="segmented" role="radiogroup" aria-label={t.sidebar.theme}>
+          {THEMES.map((th) => (
+            <button key={th} role="radio" aria-checked={theme === th} className={theme === th ? "on" : ""} onClick={() => onTheme(th)}>
+              {t.themes[th]}
+            </button>
+          ))}
+        </div>
+        <div className="segmented" role="radiogroup" aria-label={t.sidebar.language}>
+          {LOCALES.map((l) => (
+            <button
+              key={l.id}
+              role="radio"
+              lang={l.id}
+              aria-checked={locale === l.id}
+              className={locale === l.id ? "on" : ""}
+              onClick={() => setLocale(l.id)}
+            >
+              {l.label}
             </button>
           ))}
         </div>
         <BackupControls library={library} />
         <button className="link-btn shortcuts-btn" onClick={() => setShowKeys(true)}>
-          Klavye kısayolları
+          {t.sidebar.shortcuts}
         </button>
         {library.storage === "browser" && (
-          <div className="storage-note">Tarayıcı önizlemesi: veriler yalnızca bu tarayıcıda tutulur.</div>
+          <div className="storage-note">{t.sidebar.browserStorage}</div>
         )}
       </div>
 
       {showKeys && (
-        <Dialog title="Klavye kısayolları" onClose={() => setShowKeys(false)}>
+        <Dialog title={t.sidebar.shortcuts} onClose={() => setShowKeys(false)}>
           <dl className="keys">
-            {SHORTCUTS.map(([k, d]) => (
+            {t.shortcuts.map(([k, d]) => (
               <div key={k}>
                 <dt>
                   <kbd>{k}</kbd>
@@ -172,7 +178,7 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
           </dl>
           <div className="dialog-actions">
             <button className="btn btn-primary" autoFocus onClick={() => setShowKeys(false)}>
-              Tamam
+              {t.common.ok}
             </button>
           </div>
         </Dialog>
@@ -180,13 +186,9 @@ export function Sidebar({ library, filter, onFilter, theme, onTheme }: Props) {
 
       {deleting && (
         <ConfirmDialog
-          title="Klasörü sil"
-          message={
-            <>
-              <strong>{deleting.name}</strong> klasörü silinecek. İçindeki şarkılar silinmez, "Klasörsüz" bölümüne taşınır.
-            </>
-          }
-          confirmLabel="Klasörü sil"
+          title={t.sidebar.deleteFolder}
+          message={<RichText parts={t.sidebar.deleteFolderBody(deleting.name)} />}
+          confirmLabel={t.sidebar.deleteFolder}
           onConfirm={() => {
             if (filter.kind === "folder" && filter.id === deleting.id) onFilter({ kind: "all" });
             library.deleteFolder(deleting.id);

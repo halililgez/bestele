@@ -1,6 +1,7 @@
 import Database from "@tauri-apps/plugin-sql";
 import { normalizeCapo, type Folder, type Recording, type Section, type SectionKind, type Song, type SongFields, type SongStatus, type Version } from "../types";
 import { newId, type Repo } from "./repo";
+import { t } from "../i18n";
 
 interface SongRow {
   id: string;
@@ -236,7 +237,7 @@ export async function createSqlRepo(): Promise<Repo> {
 
   async function getSong(id: string): Promise<Song> {
     const rows = await db.select<SongRow[]>("SELECT * FROM songs WHERE id = $1", [id]);
-    if (!rows[0]) throw new Error("Şarkı bulunamadı");
+    if (!rows[0]) throw new Error(t().errors.songNotFound);
     return toSong(rows[0]);
   }
 
@@ -509,19 +510,19 @@ export async function createSqlRepo(): Promise<Repo> {
 
   async function getVersion(id: string): Promise<Version> {
     const rows = await db.select<VersionRow[]>("SELECT * FROM versions WHERE id = $1", [id]);
-    if (!rows[0]) throw new Error("Versiyon bulunamadı");
+    if (!rows[0]) throw new Error(t().errors.versionNotFound);
     return toVersion(rows[0]);
   }
 
   async function getRecording(id: string): Promise<Recording> {
     const rows = await db.select<RecordingRow[]>("SELECT * FROM recordings WHERE id = $1", [id]);
-    if (!rows[0]) throw new Error("Kayıt bulunamadı");
+    if (!rows[0]) throw new Error(t().errors.recordingNotFound);
     return toRecording(rows[0]);
   }
 
   async function getSection(id: string): Promise<Section> {
     const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE id = $1", [id]);
-    if (!rows[0]) throw new Error("Bölüm bulunamadı");
+    if (!rows[0]) throw new Error(t().errors.sectionNotFound);
     return toSection(rows[0]);
   }
 

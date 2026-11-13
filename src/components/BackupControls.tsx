@@ -3,9 +3,11 @@ import type { Library } from "../useLibrary";
 import { buildBackup, restoreBackup } from "../backup";
 import { downloadFile } from "../exporting";
 import { Dialog } from "./Dialog";
+import { useT } from "../i18n";
 
 /** Kenar çubuğundaki "Yedekle / Yedekten yükle" düğmeleri. */
 export function BackupControls({ library }: { library: Library }) {
+  const t = useT();
   const [busy, setBusy] = useState<"export" | "import" | null>(null);
   const [result, setResult] = useState<{ title: string; body: string } | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -15,14 +17,15 @@ export function BackupControls({ library }: { library: Library }) {
     try {
       const backup = await buildBackup();
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadFile(`bestele-yedek-${stamp}.json`, JSON.stringify(backup), "application/json");
+      const fileName = t.backup.fileName(stamp);
+      downloadFile(fileName, JSON.stringify(backup), "application/json");
       const audioCount = Object.keys(backup.audio).length;
       setResult({
-        title: "Yedek hazır",
-        body: `${backup.songs.length} şarkı, ${backup.versions.length} versiyon ve ${audioCount} ses dosyası “bestele-yedek-${stamp}.json” dosyasına kaydedildi (İndirilenler klasörü). Bu dosyayı güvenli bir yerde sakla.`,
+        title: t.backup.readyTitle,
+        body: t.backup.readyBody(backup.songs.length, backup.versions.length, audioCount, fileName),
       });
     } catch (e) {
-      setResult({ title: "Yedek alınamadı", body: String(e) });
+      setResult({ title: t.backup.exportFailed, body: String(e) });
     } finally {
       setBusy(null);
     }
@@ -35,14 +38,11 @@ export function BackupControls({ library }: { library: Library }) {
       const r = await restoreBackup(await file.text());
       await library.reload();
       setResult({
-        title: "Yedek yüklendi",
-        body:
-          r.songsAdded === r.songsInFile
-            ? `${r.songsAdded} şarkı deftere eklendi.`
-            : `Yedekteki ${r.songsInFile} şarkının ${r.songsAdded} tanesi eklendi; diğerleri defterde zaten vardı, onlara dokunulmadı.`,
+        title: t.backup.importedTitle,
+        body: r.songsAdded === r.songsInFile ? t.backup.importedAll(r.songsAdded) : t.backup.importedSome(r.songsAdded, r.songsInFile),
       });
     } catch (e) {
-      setResult({ title: "Yedek yüklenemedi", body: e instanceof Error ? e.message : String(e) });
+      setResult({ title: t.backup.importFailed, body: e instanceof Error ? e.message : String(e) });
     } finally {
       setBusy(null);
       if (input.current) input.current.value = "";
@@ -52,11 +52,11 @@ export function BackupControls({ library }: { library: Library }) {
   return (
     <div className="backup">
       <button className="link-btn" onClick={exportAll} disabled={busy !== null}>
-        {busy === "export" ? "Yedekleniyor…" : "Yedekle"}
+        {busy === "export" ? t.backup.exporting : t.backup.export}
       </button>
       <span className="muted">·</span>
       <button className="link-btn" onClick={() => input.current?.click()} disabled={busy !== null}>
-        {busy === "import" ? "Yükleniyor…" : "Yedekten yükle"}
+        {busy === "import" ? t.common.loading : t.backup.import}
       </button>
       <input ref={input} type="file" accept="application/json,.json" hidden onChange={(e) => importFile(e.target.files?.[0])} />
       {result && (
@@ -64,7 +64,7 @@ export function BackupControls({ library }: { library: Library }) {
           <p>{result.body}</p>
           <div className="dialog-actions">
             <button className="btn btn-primary" autoFocus onClick={() => setResult(null)}>
-              Tamam
+              {t.common.ok}
             </button>
           </div>
         </Dialog>

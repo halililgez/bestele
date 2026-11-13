@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getRepo } from "./data/repo";
 import type { Section, Song, SongStatus, Version, VersionPatch, VersionSnapshot } from "./types";
+import { t } from "./i18n";
 
 export function makeSnapshot(song: Song, sections: Section[]): VersionSnapshot {
   return {
@@ -19,10 +20,11 @@ export function snapshotSections(snap: VersionSnapshot, songId = ""): Section[] 
 
 /** Karşılaştırma için anlık görüntünün düz metin hâli. */
 export function snapshotText(snap: VersionSnapshot, titleOf: (s: Section, all: Section[]) => string): string {
+  const m = t().exporting;
   const meta = [
-    snap.musicalKey ? `Ton: ${snap.musicalKey}` : null,
-    snap.tempo ? `Tempo: ${snap.tempo} BPM` : null,
-    `Ölçü: ${snap.timeSignature}`,
+    snap.musicalKey ? m.key(snap.musicalKey) : null,
+    snap.tempo ? m.tempo(snap.tempo) : null,
+    m.timeSignature(snap.timeSignature),
   ]
     .filter(Boolean)
     .join(" · ");

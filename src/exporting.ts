@@ -1,5 +1,6 @@
 import { tokenizeLine } from "./chords";
 import type { Section, Song } from "./types";
+import { t } from "./i18n";
 
 type TitleOf = (s: Section, all: Section[]) => string;
 
@@ -23,12 +24,13 @@ export function chordsOverLyrics(line: string): string[] {
 }
 
 function metaLine(song: Song): string {
+  const m = t().exporting;
   return [
-    song.writer && `Söz/Müzik: ${song.writer}`,
-    song.musicalKey && `Ton: ${song.musicalKey}`,
-    song.tempo && `Tempo: ${song.tempo} BPM`,
-    song.timeSignature && `Ölçü: ${song.timeSignature}`,
-    song.capo > 0 && `Capo: ${song.capo}`,
+    song.writer && m.writer(song.writer),
+    song.musicalKey && m.key(song.musicalKey),
+    song.tempo && m.tempo(song.tempo),
+    song.timeSignature && m.timeSignature(song.timeSignature),
+    song.capo > 0 && m.capo(song.capo),
   ]
     .filter(Boolean)
     .join("  ·  ");
@@ -36,7 +38,7 @@ function metaLine(song: Song): string {
 
 /** Akorları sözlerin üstünde, düz metin. Mesajla paylaşmak ya da yazdırmak için. */
 export function songToText(song: Song, sections: Section[], titleOf: TitleOf): string {
-  const out: string[] = [song.title || "Adsız şarkı"];
+  const out: string[] = [song.title || t().common.untitledSong];
   const meta = metaLine(song);
   if (meta) out.push(meta);
   for (const s of sections) {
@@ -58,7 +60,7 @@ const CHORDPRO_ENV: Partial<Record<Section["kind"], string>> = {
 
 /** ChordPro biçimi: birçok akor uygulamasının (OnSong, SongbookPro vb.) okuyabildiği standart. */
 export function songToChordPro(song: Song, sections: Section[], titleOf: TitleOf): string {
-  const out: string[] = [`{title: ${song.title || "Adsız şarkı"}}`];
+  const out: string[] = [`{title: ${song.title || t().common.untitledSong}}`];
   if (song.writer) out.push(`{artist: ${song.writer}}`);
   if (song.musicalKey) out.push(`{key: ${song.musicalKey}}`);
   if (song.tempo) out.push(`{tempo: ${song.tempo}}`);
@@ -79,7 +81,7 @@ export function songToChordPro(song: Song, sections: Section[], titleOf: TitleOf
 
 /** Dosya adı için güvenli hâle getirir (Türkçe harfler korunur). */
 export function safeFileName(name: string): string {
-  return (name || "Adsız şarkı").replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 80);
+  return (name || t().common.untitledSong).replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
 export function downloadFile(fileName: string, content: BlobPart, mime: string) {

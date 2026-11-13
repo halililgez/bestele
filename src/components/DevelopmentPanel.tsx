@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Library } from "../useLibrary";
 import { getRepo } from "../data/repo";
-import { STATUS_LABELS, STATUS_ORDER, type Recording, type Song, type SongStatus, type Version, type VersionSnapshot } from "../types";
+import { STATUS_ORDER, type Recording, type Song, type SongStatus, type Version, type VersionSnapshot } from "../types";
 import { formatDuration, useRecordings } from "../useRecordings";
 import { makeSnapshot, snapshotSections, snapshotText, useVersions } from "../versioning";
 import { diffLines, diffStats, type DiffLine } from "../diff";
-import { relativeTime } from "../util";
+import { formatDateTime, relativeTime } from "../util";
+import { RichText, useT } from "../i18n";
 import { SheetText } from "./SongSheet";
 import { sectionTitle } from "../sectionTitle";
 import { ConfirmDialog, Dialog } from "./Dialog";
@@ -15,8 +16,6 @@ interface Props {
   library: Library;
 }
 
-const dateFmt = new Intl.DateTimeFormat("tr", { dateStyle: "medium", timeStyle: "short" });
-
 type TimelineEvent =
   | { kind: "version"; at: number; version: Version }
   | { kind: "recording"; at: number; recording: Recording }
@@ -25,6 +24,7 @@ type TimelineEvent =
 type Compare = { versionId: string; against: "previous" | "current"; lines: DiffLine[] };
 
 export function DevelopmentPanel({ song, library }: Props) {
+  const t = useT();
   const touched = useCallback(() => library.markTouched(song.id), [library, song.id]);
   const v = useVersions(song.id, touched);
   const rec = useRecordings(song.id, touched);
@@ -83,8 +83,8 @@ export function DevelopmentPanel({ song, library }: Props) {
 
   async function restore(version: Version) {
     await v.create(song, {
-      name: `“${version.name}” versiyonuna dönmeden önce`,
-      note: "Geri dönmeden önce otomatik kaydedildi.",
+      name: t.development.beforeRestoreName(version.name),
+      note: t.development.beforeRestoreNote,
       stage: song.status,
       recordingIds: [],
     });
@@ -96,20 +96,20 @@ export function DevelopmentPanel({ song, library }: Props) {
       timeSignature: version.snapshot.timeSignature,
     });
     setCompare(null);
-    setNotice(`Şarkı “${version.name}” hâline döndürüldü. Önceki hâli de versiyon olarak saklandı.`);
+    setNotice(t.development.restored(version.name));
   }
 
   return (
     <div className="development">
-      <div className="journey" aria-label="Aşamalar">
+      <div className="journey" aria-label={t.development.stages}>
         {STATUS_ORDER.map((st, i) => {
           const first = journey.get(st);
           const reached = STATUS_ORDER.indexOf(song.status) >= i;
           return (
             <div key={st} className={`journey-step ${reached ? "reached" : ""} ${song.status === st ? "current" : ""}`}>
               <span className={`journey-dot status-${st}`} />
-              <span className="journey-name">{STATUS_LABELS[st]}</span>
-              <span className="journey-date">{first ? dateFmt.format(new Date(first.createdAt)) : reached && song.status === st ? "şu an" : "—"}</span>
+              <span className="journey-name">{t.status[st]}</span>
+              <span className="journey-date">{first ? formatDateTime(first.createdAt) : reached && song.status === st ? t.development.now : "—"}</span>
             </div>
           );
         })}
@@ -117,28 +117,25 @@ export function DevelopmentPanel({ song, library }: Props) {
 
       <div className="dev-toolbar">
         <button className="btn btn-primary" onClick={() => setSaving(true)}>
-          + Versiyon kaydet
+          {t.development.saveVersion}
         </button>
         <label className="check">
           <input type="checkbox" checked={onlyVersions} onChange={(e) => setOnlyVersions(e.target.checked)} />
-          Yalnızca versiyonlar
+          {t.development.onlyVersions}
         </label>
       </div>
 
       {notice && (
         <div className="notice">
           {notice}
-          <button className="icon-btn" aria-label="Kapat" onClick={() => setNotice(null)}>
+          <button className="icon-btn" aria-label={t.common.close} onClick={() => setNotice(null)}>
             ×
           </button>
         </div>
       )}
 
       {v.loaded && v.versions.length === 0 && (
-        <p className="hint">
-          Şarkının şu anki hâlini (sözler, akorlar, ton, tempo) bir versiyon olarak kaydet. Zamanla “İlk taslak”, “Stüdyo öncesi”, “Son hâli” gibi
-          versiyonlar biriktikçe şarkının nasıl geliştiğini burada görürsün.
-        </p>
+        <p className="hint">{t.development.emptyHint}</p>
       )}
 
       <ol className="timeline">
@@ -169,7 +166,7 @@ export function DevelopmentPanel({ song, library }: Props) {
                 <div className="tl-line">
                   <MiniPlayer rec={e.recording} urlFor={rec.urlFor} />
                   <span className="tl-text">
-                    {e.recording.source === "dosya" ? "Dosya yüklendi" : "Kayıt alındı"}: <strong>{e.recording.title || "Adsız kayıt"}</strong>
+                    {e.recording.source === "dosya" ? t.development.fileUploaded : t.development.recorded}: <strong>{e.recording.title || t.common.untitledRecording}</strong>
                   </span>
                   <span className="tl-date">{relativeTime(e.at)}</span>
                 </div>
@@ -180,8 +177,8 @@ export function DevelopmentPanel({ song, library }: Props) {
               <span className="tl-icon">✎</span>
               <div className="tl-body">
                 <div className="tl-line">
-                  <span className="tl-text">Şarkı deftere eklendi</span>
-                  <span className="tl-date">{dateFmt.format(new Date(e.at))}</span>
+                  <span className="tl-text">{t.development.songAdded}</span>
+                  <span className="tl-date">{formatDateTime(e.at)}</span>
                 </div>
               </div>
             </li>
@@ -192,7 +189,7 @@ export function DevelopmentPanel({ song, library }: Props) {
       {saving && (
         <SaveVersionDialog
           song={song}
-          defaultName={`Versiyon ${v.versions.length + 1}`}
+          defaultName={t.development.defaultVersionName(v.versions.length + 1)}
           recordings={rec.recordings}
           onClose={() => setSaving(false)}
           onSave={async (fields, updateStatus) => {
@@ -205,14 +202,9 @@ export function DevelopmentPanel({ song, library }: Props) {
 
       {restoring && (
         <ConfirmDialog
-          title="Bu versiyona dön"
-          message={
-            <>
-              Sözler, akorlar, ton, tempo ve ölçü <strong>{restoring.name}</strong> versiyonundaki hâline döndürülecek. Şu anki hâli kaybolmaz, önce
-              otomatik olarak yeni bir versiyon şeklinde saklanır.
-            </>
-          }
-          confirmLabel="Geri dön"
+          title={t.development.restoreTitle}
+          message={<RichText parts={t.development.restoreBody(restoring.name)} />}
+          confirmLabel={t.development.restoreConfirm}
           onConfirm={() => restore(restoring)}
           onClose={() => setRestoring(null)}
         />
@@ -220,13 +212,9 @@ export function DevelopmentPanel({ song, library }: Props) {
 
       {deleting && (
         <ConfirmDialog
-          title="Versiyonu sil"
-          message={
-            <>
-              <strong>{deleting.name}</strong> versiyonu silinecek. Şarkının şu anki hâli ve kayıtlar etkilenmez.
-            </>
-          }
-          confirmLabel="Sil"
+          title={t.development.deleteVersion}
+          message={<RichText parts={t.development.deleteVersionBody(deleting.name)} />}
+          confirmLabel={t.common.delete}
           onConfirm={() => v.remove(deleting.id)}
           onClose={() => setDeleting(null)}
         />
@@ -234,13 +222,13 @@ export function DevelopmentPanel({ song, library }: Props) {
 
       {(v.error || rec.error) && (
         <div className="toast" role="alert">
-          <span>Bir sorun oldu: {v.error || rec.error}</span>
+          <span>{t.common.problem(v.error || rec.error || "")}</span>
           <button
             onClick={() => {
               v.clearError();
               rec.clearError();
             }}
-            aria-label="Kapat"
+            aria-label={t.common.close}
           >
             ×
           </button>
@@ -266,6 +254,7 @@ interface ItemProps {
 }
 
 function VersionItem({ version, previous, recordings, recById, urlFor, viewing, compare, onView, onCompare, onUpdate, onRestore, onDelete }: ItemProps) {
+  const t = useT();
   const [name, setName] = useState(version.name);
   const [note, setNote] = useState(version.note);
   const snap = version.snapshot;
@@ -290,27 +279,27 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => name.trim() && name !== version.name && onUpdate({ name: name.trim() })}
-            aria-label="Versiyon adı"
+            aria-label={t.development.versionName}
           />
-          <span className={`status status-${version.stage}`}>{STATUS_LABELS[version.stage]}</span>
-          <span className="tl-date" title={dateFmt.format(new Date(version.createdAt))}>
+          <span className={`status status-${version.stage}`}>{t.status[version.stage]}</span>
+          <span className="tl-date" title={formatDateTime(version.createdAt)}>
             {relativeTime(version.createdAt)}
           </span>
         </div>
 
         <div className="version-meta">
-          <span>{snap.sections.length} bölüm</span>
-          <span>{lineCount} satır</span>
+          <span>{t.development.sectionCount(snap.sections.length)}</span>
+          <span>{t.development.lineCount(lineCount)}</span>
           {snap.musicalKey && <span className="pill">{snap.musicalKey}</span>}
           {snap.tempo && <span className="pill">{snap.tempo} BPM</span>}
           {changes && (changes.added > 0 || changes.removed > 0) ? (
             <span className="diffstat">
-              öncekine göre <span className="plus">+{changes.added}</span> <span className="minus">−{changes.removed}</span>
+              {t.development.vsPrevious} <span className="plus">+{changes.added}</span> <span className="minus">−{changes.removed}</span>
             </span>
           ) : changes ? (
-            <span className="diffstat">öncekiyle aynı</span>
+            <span className="diffstat">{t.development.sameAsPrevious}</span>
           ) : (
-            <span className="diffstat">ilk versiyon</span>
+            <span className="diffstat">{t.development.firstVersion}</span>
           )}
         </div>
 
@@ -318,7 +307,7 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
           className="rec-note"
           rows={1}
           value={note}
-          placeholder="Bu versiyonda ne değişti? Neyi denedin?"
+          placeholder={t.development.versionNotePlaceholder}
           onChange={(e) => setNote(e.target.value)}
           onBlur={() => note !== version.note && onUpdate({ note })}
         />
@@ -327,11 +316,11 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
           {attached.map((r) => (
             <span key={r.id} className="version-rec">
               <MiniPlayer rec={r} urlFor={urlFor} />
-              <span>{r.title || "Adsız kayıt"}</span>
+              <span>{r.title || t.common.untitledRecording}</span>
               <span className="muted">{formatDuration(r.durationMs)}</span>
               <button
                 className="icon-btn"
-                aria-label="Kaydı versiyondan çıkar"
+                aria-label={t.development.detachRecording}
                 onClick={() => onUpdate({ recordingIds: version.recordingIds.filter((id) => id !== r.id) })}
               >
                 ×
@@ -343,12 +332,12 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
               className="select attach-select"
               value=""
               onChange={(e) => e.target.value && onUpdate({ recordingIds: [...version.recordingIds, e.target.value] })}
-              aria-label="Versiyona kayıt ekle"
+              aria-label={t.development.attachRecording}
             >
-              <option value="">+ Kayıt bağla…</option>
+              <option value="">{t.development.attachPlaceholder}</option>
               {attachable.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.title || "Adsız kayıt"}
+                  {r.title || t.common.untitledRecording}
                 </option>
               ))}
             </select>
@@ -357,28 +346,28 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
 
         <div className="version-actions">
           <button className={`chip ${viewing ? "on" : ""}`} onClick={onView}>
-            Görüntüle
+            {t.development.view}
           </button>
           {previous && (
             <button className={`chip ${compare?.against === "previous" ? "on" : ""}`} onClick={() => onCompare("previous")}>
-              Öncekiyle karşılaştır
+              {t.development.comparePrevious}
             </button>
           )}
           <button className={`chip ${compare?.against === "current" ? "on" : ""}`} onClick={() => onCompare("current")}>
-            Şimdikiyle karşılaştır
+            {t.development.compareCurrent}
           </button>
           <span className="spacer" />
           <button className="btn" onClick={onRestore}>
-            Bu versiyona dön
+            {t.development.restoreTitle}
           </button>
-          <button className="icon-btn" aria-label="Versiyonu sil" title="Versiyonu sil" onClick={onDelete}>
+          <button className="icon-btn" aria-label={t.development.deleteVersion} title={t.development.deleteVersion} onClick={onDelete}>
             ×
           </button>
         </div>
 
         {viewing && (
           <div className="sheet version-sheet">
-            {secs.filter((s) => s.content.trim()).length === 0 && <p className="hint">Bu versiyonda söz ya da akor yoktu.</p>}
+            {secs.filter((s) => s.content.trim()).length === 0 && <p className="hint">{t.development.noLyrics}</p>}
             {secs
               .filter((s) => s.content.trim())
               .map((s) => (
@@ -393,12 +382,12 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
         {compare && (
           <div className="diff">
             <div className="diff-legend">
-              {compare.against === "current" ? "Bu versiyondan şimdiki hâle" : "Önceki versiyondan bu versiyona"}
+              {compare.against === "current" ? t.development.diffToCurrent : t.development.diffFromPrevious}
               {" · "}
-              <span className="plus">eklenen</span> / <span className="minus">çıkarılan</span>
+              <span className="plus">{t.development.added}</span> / <span className="minus">{t.development.removed}</span>
             </div>
             {compare.lines.every((l) => l.op === "same") ? (
-              <p className="hint">Hiçbir fark yok.</p>
+              <p className="hint">{t.development.noDiff}</p>
             ) : (
               <pre className="diff-body">
                 {compare.lines.map((l, i) => (
@@ -417,6 +406,7 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
 }
 
 function MiniPlayer({ rec, urlFor }: { rec: Recording; urlFor: (r: Recording) => Promise<string> }) {
+  const t = useT();
   const audio = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -435,7 +425,7 @@ function MiniPlayer({ rec, urlFor }: { rec: Recording; urlFor: (r: Recording) =>
   }
 
   return (
-    <button className="mini-play" onClick={toggle} aria-label={playing ? "Durdur" : "Dinle"}>
+    <button className="mini-play" onClick={toggle} aria-label={playing ? t.common.stop : t.common.listen}>
       {playing ? "❚❚" : "▶"}
     </button>
   );
@@ -450,6 +440,7 @@ interface SaveProps {
 }
 
 function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: SaveProps) {
+  const t = useT();
   const [name, setName] = useState(defaultName);
   const [note, setNote] = useState("");
   const [stage, setStage] = useState<SongStatus>(song.status);
@@ -460,25 +451,25 @@ function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: S
   );
 
   return (
-    <Dialog title="Versiyon kaydet" onClose={onClose}>
+    <Dialog title={t.development.saveTitle} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onSave({ name: name.trim() || defaultName, note, stage, recordingIds: [...picked] }, updateStatus);
         }}
       >
-        <p>Sözler, akorlar, ton ve tempo şu anki hâliyle saklanır.</p>
+        <p>{t.development.saveIntro}</p>
         <div className="fields">
           <label className="field wide">
-            <span>Versiyon adı</span>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="ör. İlk taslak, Stüdyo öncesi" />
+            <span>{t.development.versionName}</span>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t.development.namePlaceholder} />
           </label>
           <label className="field">
-            <span>Aşama</span>
+            <span>{t.development.stage}</span>
             <select value={stage} onChange={(e) => setStage(e.target.value as SongStatus)}>
               {STATUS_ORDER.map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
+                  {t.status[s]}
                 </option>
               ))}
             </select>
@@ -487,17 +478,17 @@ function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: S
             <span>&nbsp;</span>
             <label className="check">
               <input type="checkbox" checked={updateStatus} onChange={(e) => setUpdateStatus(e.target.checked)} disabled={stage === song.status} />
-              Şarkının durumunu da güncelle
+              {t.development.updateStatus}
             </label>
           </label>
           <label className="field wide">
-            <span>Not</span>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Ne değişti, neyi denedin?" style={{ minHeight: 0 }} />
+            <span>{t.development.note}</span>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder={t.development.notePlaceholder} style={{ minHeight: 0 }} />
           </label>
         </div>
         {recordings.length > 0 && (
           <div className="field">
-            <span>Bu versiyonun kayıtları</span>
+            <span>{t.development.versionRecordings}</span>
             <div className="pick-list">
               {recordings.slice(0, 12).map((r) => (
                 <label key={r.id} className="check">
@@ -511,7 +502,7 @@ function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: S
                       setPicked(next);
                     }}
                   />
-                  {r.title || "Adsız kayıt"} <span className="muted">· {formatDuration(r.durationMs)}</span>
+                  {r.title || t.common.untitledRecording} <span className="muted">· {formatDuration(r.durationMs)}</span>
                 </label>
               ))}
             </div>
@@ -519,10 +510,10 @@ function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: S
         )}
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={onClose}>
-            Vazgeç
+            {t.common.cancel}
           </button>
           <button type="submit" className="btn btn-primary">
-            Kaydet
+            {t.common.save}
           </button>
         </div>
       </form>

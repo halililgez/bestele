@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Metronome, beatsPerBar, bpmFromTaps } from "../metronome";
+import { useT } from "../i18n";
 
 interface Props {
   tempo: number | null;
@@ -12,6 +13,7 @@ const DEFAULT_BPM = 90;
 
 /** Metronom: çal/durdur, vuruş göstergesi, +/− ve "vur" ile tempo bulma. */
 export function MetronomeControl({ tempo, timeSignature, onTempo }: Props) {
+  const t = useT();
   const metro = useRef<Metronome | null>(null);
   const [playing, setPlaying] = useState(false);
   const [beat, setBeat] = useState(-1);
@@ -55,18 +57,18 @@ export function MetronomeControl({ tempo, timeSignature, onTempo }: Props) {
   }
 
   return (
-    <div className="metronome" aria-label="Metronom">
-      <button className={`metro-play ${playing ? "on" : ""}`} onClick={toggle} title={playing ? "Metronomu durdur" : "Metronomu başlat"}>
+    <div className="metronome" aria-label={t.metronome.label}>
+      <button className={`metro-play ${playing ? "on" : ""}`} onClick={toggle} title={playing ? t.metronome.stop : t.metronome.start}>
         {playing ? "■" : "♩"}
       </button>
-      <button className="icon-btn" aria-label="Tempoyu düşür" onClick={() => onTempo(Math.max(20, bpm - 1))}>
+      <button className="icon-btn" aria-label={t.metronome.slower} onClick={() => onTempo(Math.max(20, bpm - 1))}>
         −
       </button>
-      <span className="metro-bpm" title={tempo ? "Şarkının temposu" : "Şarkıya tempo girilmemiş, varsayılan kullanılıyor"}>
+      <span className="metro-bpm" title={tempo ? t.metronome.songTempo : t.metronome.defaultTempo}>
         {bpm}
         <small> BPM</small>
       </span>
-      <button className="icon-btn" aria-label="Tempoyu artır" onClick={() => onTempo(Math.min(300, bpm + 1))}>
+      <button className="icon-btn" aria-label={t.metronome.faster} onClick={() => onTempo(Math.min(300, bpm + 1))}>
         +
       </button>
       <span className="metro-dots" aria-hidden>
@@ -74,8 +76,8 @@ export function MetronomeControl({ tempo, timeSignature, onTempo }: Props) {
           <span key={i} className={`metro-dot ${i === 0 ? "first" : ""} ${playing && beat === i ? "lit" : ""}`} />
         ))}
       </span>
-      <button className="btn tap-btn" onClick={tap} title="Şarkının temposunda birkaç kez tıkla">
-        Vur
+      <button className="btn tap-btn" onClick={tap} title={t.metronome.tapTitle}>
+        {t.metronome.tap}
       </button>
     </div>
   );

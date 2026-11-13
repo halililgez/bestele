@@ -53,7 +53,8 @@ Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve 
 - **Arama:** Ad, yazan, not, etiket ve sözlerin içinde. Türkçe karakter duyarsızdır ("gece yarisi" yazınca "Gece Yarısı" bulunur), eşleşen söz satırı kartta gösterilir.
 - **Dışa aktarma:** Yazdırma, düz metin olarak kopyalama, `.txt` ve ChordPro (`.cho`) dosyası.
 - **Yedekleme:** Bütün defter, ses dosyaları dahil tek bir `.json` dosyasına alınır. Yedekten yükleme mevcut şarkıları ezmez.
-- **Temalar:** Defter (çizgili kâğıt) ve Modern (koyu).
+- **Temalar:** Defter (çizgili kâğıt), Modern (pastel açık) ve Gece (koyu).
+- **Dil:** Türkçe ve İngilizce. İlk açılışta sistem dili seçilir; kenar çubuğundan istediğin an değiştirilebilir, tercih saklanır.
 
 ## Klavye kısayolları
 

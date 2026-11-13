@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Dialog } from "./Dialog";
 import { MUSICAL_KEYS, emptySong, type SongFields } from "../types";
+import { useT } from "../i18n";
 
 interface Props {
   defaultFolderId: string | null;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function NewSongDialog({ defaultFolderId, defaultTag, onCreate, onClose }: Props) {
+  const t = useT();
   const [title, setTitle] = useState("");
   const [musicalKey, setKey] = useState("");
   const [tempo, setTempo] = useState("");
@@ -18,7 +20,7 @@ export function NewSongDialog({ defaultFolderId, defaultTag, onCreate, onClose }
     e.preventDefault();
     const bpm = parseInt(tempo, 10);
     onCreate({
-      ...emptySong(title.trim() || "Adsız şarkı"),
+      ...emptySong(title.trim() || t.common.untitledSong),
       musicalKey,
       tempo: Number.isFinite(bpm) && bpm > 0 ? bpm : null,
       folderId: defaultFolderId,
@@ -27,17 +29,17 @@ export function NewSongDialog({ defaultFolderId, defaultTag, onCreate, onClose }
   }
 
   return (
-    <Dialog title="Yeni şarkı" onClose={onClose}>
+    <Dialog title={t.newSong.title} onClose={onClose}>
       <form onSubmit={submit}>
         <div className="fields">
           <label className="field wide">
-            <span>Şarkının adı</span>
-            <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Çalışma adı da olur" />
+            <span>{t.newSong.name}</span>
+            <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.newSong.namePlaceholder} />
           </label>
           <label className="field">
-            <span>Ton</span>
+            <span>{t.common.key}</span>
             <select value={musicalKey} onChange={(e) => setKey(e.target.value)}>
-              <option value="">Belirsiz</option>
+              <option value="">{t.common.keyUnset}</option>
               {MUSICAL_KEYS.map((k) => (
                 <option key={k} value={k}>
                   {k}
@@ -46,16 +48,16 @@ export function NewSongDialog({ defaultFolderId, defaultTag, onCreate, onClose }
             </select>
           </label>
           <label className="field">
-            <span>Tempo (BPM)</span>
-            <input type="number" min={20} max={300} value={tempo} onChange={(e) => setTempo(e.target.value)} placeholder="ör. 92" />
+            <span>{t.common.tempoBpm}</span>
+            <input type="number" min={20} max={300} value={tempo} onChange={(e) => setTempo(e.target.value)} placeholder={t.newSong.tempoPlaceholder} />
           </label>
         </div>
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={onClose}>
-            Vazgeç
+            {t.common.cancel}
           </button>
           <button type="submit" className="btn btn-primary">
-            Oluştur
+            {t.newSong.create}
           </button>
         </div>
       </form>

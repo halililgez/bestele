@@ -31,7 +31,8 @@ Repoya doğrudan yazma yetkisi yalnızca proje sahibindedir. Katkılar fork + pu
 
 ## Kurallar
 
-- Arayüz metinleri Türkçe.
+- Arayüz metinleri koda gömülmez, `src/i18n/` altındaki sözlüklerden gelir. Kaynak dil Türkçedir (`src/i18n/tr.ts`): yeni bir metni önce oraya, sonra `src/i18n/en.ts`'ye ekle. İngilizce sözlük `Messages` tipine uymak zorunda olduğundan eksik çeviri derleme hatası verir. Bileşenlerde `const t = useT()`, React dışındaki kodda `t()` ile kullan.
+- Yeni bir dil eklemek için `src/i18n/` altına bir sözlük dosyası aç (`en.ts`'yi örnek al) ve `src/i18n/index.tsx` içindeki `Locale` tipine, `LOCALES` listesine ve `DICTS` eşlemesine ekle.
 - Veritabanı şeması değişiyorsa `src/data/sqlRepo.ts` içindeki `MIGRATIONS` dizisinin **sonuna** yeni bir adım ekle; var olan adımları değiştirme. Tarayıcı önizlemesi için `src/data/localRepo.ts`'yi de güncelle.
 - Saf mantık (akor, transpoze, dışa aktarma vb.) için `vitest` testi ekle.
 - Yeni bağımlılık eklemeden önce gerçekten gerekli olduğundan emin ol.

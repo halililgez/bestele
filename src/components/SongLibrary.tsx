@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRepo } from "../data/repo";
 import type { Library } from "../useLibrary";
-import { STATUS_LABELS, STATUS_ORDER, type Song, type SongStatus } from "../types";
-import { relativeTime, searchFold } from "../util";
+import { STATUS_ORDER, type Song, type SongStatus } from "../types";
+import { compareText, relativeTime, searchFold } from "../util";
+import { useLocale, useT } from "../i18n";
 import type { LibraryFilter } from "./Sidebar";
 
 type Sort = "updated" | "created" | "title";
@@ -15,6 +16,8 @@ interface Props {
 }
 
 export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
+  const t = useT();
+  const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<SongStatus | null>(null);
   const [sort, setSort] = useState<Sort>("updated");
@@ -22,15 +25,15 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
   const heading = useMemo(() => {
     switch (filter.kind) {
       case "all":
-        return "Tüm şarkılar";
+        return t.sidebar.allSongs;
       case "unfiled":
-        return "Klasörsüz";
+        return t.common.unfiled;
       case "tag":
         return `#${filter.tag}`;
       case "folder":
-        return library.folders.find((f) => f.id === filter.id)?.name ?? "Klasör";
+        return library.folders.find((f) => f.id === filter.id)?.name ?? t.library.folderFallback;
     }
-  }, [filter, library.folders]);
+  }, [filter, library.folders, t]);
 
   const inScope = useMemo(
     () =>
@@ -79,11 +82,11 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
       return Boolean(line);
     });
     const sorted = [...list];
-    if (sort === "title") sorted.sort((a, b) => a.title.localeCompare(b.title, "tr"));
+    if (sort === "title") sorted.sort((a, b) => compareText(a.title, b.title));
     else if (sort === "created") sorted.sort((a, b) => b.createdAt - a.createdAt);
     else sorted.sort((a, b) => b.updatedAt - a.updatedAt);
     return { visible: sorted, snippets };
-  }, [inScope, query, status, sort, lyrics]);
+  }, [inScope, query, status, sort, lyrics, locale]);
 
   const nothingYet = library.songs.length === 0;
 
@@ -92,19 +95,19 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
       <header className="lib-header">
         <div>
           <h1 className="page-title">{heading}</h1>
-          <div className="page-sub">{inScope.length} şarkı</div>
+          <div className="page-sub">{t.library.songCount(inScope.length)}</div>
         </div>
         <button className="btn btn-primary" onClick={onNew}>
-          + Yeni şarkı
+          {t.library.newSong}
         </button>
       </header>
 
       {nothingYet ? (
         <div className="empty">
-          <h2>Defter boş</h2>
-          <p>İlk şarkını ekle: aklındaki bir melodi, yarım bir nakarat, bir akor dizisi… Her şey bir fikirle başlar.</p>
+          <h2>{t.library.emptyTitle}</h2>
+          <p>{t.library.emptyBody}</p>
           <button className="btn btn-primary" onClick={onNew}>
-            + İlk şarkını ekle
+            {t.library.addFirst}
           </button>
         </div>
       ) : (
@@ -113,30 +116,30 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
             <input
               className="search"
               type="search"
-              placeholder="Şarkı, söz, etiket ara…"
+              placeholder={t.library.searchPlaceholder}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <div className="chips" role="group" aria-label="Durum filtresi">
+            <div className="chips" role="group" aria-label={t.library.statusFilter}>
               <button className={`chip ${status === null ? "on" : ""}`} onClick={() => setStatus(null)}>
-                Hepsi
+                {t.common.all}
               </button>
               {STATUS_ORDER.map((st) => (
                 <button key={st} className={`chip ${status === st ? "on" : ""}`} onClick={() => setStatus(status === st ? null : st)}>
-                  {STATUS_LABELS[st]}
+                  {t.status[st]}
                 </button>
               ))}
             </div>
-            <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sıralama">
-              <option value="updated">Son düzenlenen</option>
-              <option value="created">Son eklenen</option>
-              <option value="title">Ada göre</option>
+            <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={t.library.sort}>
+              <option value="updated">{t.library.sortUpdated}</option>
+              <option value="created">{t.library.sortCreated}</option>
+              <option value="title">{t.library.sortTitle}</option>
             </select>
           </div>
 
           {visible.length === 0 ? (
             <div className="empty">
-              <p>Bu filtreye uyan şarkı yok.</p>
+              <p>{t.library.noMatch}</p>
             </div>
           ) : (
             <div className="song-grid">
@@ -168,9 +171,10 @@ function SongCard({
   snippet?: string;
   onOpen: (id: string) => void;
 }) {
+  const t = useT();
   return (
     <button className="song-card" onClick={() => onOpen(song.id)}>
-      <h3 className="title">{song.title || "Adsız şarkı"}</h3>
+      <h3 className="title">{song.title || t.common.untitledSong}</h3>
       {song.writer && <div className="writer">{song.writer}</div>}
       {snippet && <div className="snippet">“{snippet}”</div>}
       <div className="meta">
@@ -188,7 +192,7 @@ function SongCard({
         </div>
       )}
       <div className="card-foot">
-        <span className={`status status-${song.status}`}>{STATUS_LABELS[song.status]}</span>
+        <span className={`status status-${song.status}`}>{t.status[song.status]}</span>
         <span>{folderName ? `${folderName} · ` : ""}{relativeTime(song.updatedAt)}</span>
       </div>
     </button>

@@ -1,6 +1,7 @@
 import { getRepo } from "./data/repo";
 import { getAudioStore } from "./data/audioStore";
 import type { BackupFile, BackupRecords } from "./types";
+import { t } from "./i18n";
 
 function toBase64(bytes: Uint8Array): string {
   let s = "";
@@ -51,9 +52,9 @@ export async function restoreBackup(raw: string): Promise<RestoreResult> {
   try {
     file = JSON.parse(raw);
   } catch {
-    throw new Error("Dosya okunamadı: geçerli bir Bestele yedeği değil.");
+    throw new Error(t().backup.unreadable);
   }
-  if (file?.app !== "bestele" || file.format !== 1) throw new Error("Bu dosya bir Bestele yedeği değil.");
+  if (file?.app !== "bestele" || file.format !== 1) throw new Error(t().backup.notBackup);
   const audio = getAudioStore();
   for (const [name, b64] of Object.entries(file.audio ?? {})) {
     await audio.save(name, fromBase64(b64));

@@ -7,15 +7,16 @@ import { sectionTitle } from "../sectionTitle";
 import { Recorder } from "./Recorder";
 import { ConfirmDialog } from "./Dialog";
 import { WaveformEditor } from "./WaveformEditor";
+import { RichText, useT } from "../i18n";
+import { formatDateTime } from "../util";
 
 interface Props {
   song: Song;
   library: Library;
 }
 
-const dateFmt = new Intl.DateTimeFormat("tr", { dateStyle: "medium", timeStyle: "short" });
-
 export function RecordingsPanel({ song, library }: Props) {
+  const t = useT();
   const touched = () => library.markTouched(song.id);
   const r = useRecordings(song.id, touched);
   const { sections } = useSections(song.id, touched);
@@ -38,8 +39,8 @@ export function RecordingsPanel({ song, library }: Props) {
   const visible = filter === null ? r.recordings : r.recordings.filter((x) => (filter === "" ? !x.sectionId : x.sectionId === filter));
 
   function nextTitle() {
-    const base = sectionName(targetSection || null) ?? song.title ?? "Kayıt";
-    return `${base} · ${dateFmt.format(new Date())}`;
+    const base = sectionName(targetSection || null) ?? (song.title || t.common.recording);
+    return `${base} · ${formatDateTime(new Date())}`;
   }
 
   async function onFiles(files: FileList | null) {
@@ -69,9 +70,9 @@ export function RecordingsPanel({ song, library }: Props) {
         />
         <div className="rec-options">
           <label className="field">
-            <span>Bağlanacak bölüm</span>
+            <span>{t.recordings.targetSection}</span>
             <select value={targetSection} onChange={(e) => setTargetSection(e.target.value)}>
-              <option value="">Bütün şarkı</option>
+              <option value="">{t.common.wholeSong}</option>
               {sections.map((s) => (
                 <option key={s.id} value={s.id}>
                   {sectionTitle(s, sections)}
@@ -80,7 +81,7 @@ export function RecordingsPanel({ song, library }: Props) {
             </select>
           </label>
           <button className="btn" onClick={() => fileInput.current?.click()} disabled={importing}>
-            {importing ? "Yükleniyor…" : "Ses dosyası yükle"}
+            {importing ? t.common.loading : t.recordings.uploadFile}
           </button>
           <input ref={fileInput} type="file" accept="audio/*" multiple hidden onChange={(e) => onFiles(e.target.files)} />
         </div>
@@ -88,18 +89,18 @@ export function RecordingsPanel({ song, library }: Props) {
 
       {r.loaded && r.recordings.length === 0 ? (
         <div className="empty">
-          <h2>Henüz kayıt yok</h2>
-          <p>Aklına gelen melodiyi hemen kaydet ya da telefondan, stüdyodan aldığın dosyaları yükle. Kayıtları bir bölüme bağlayabilirsin.</p>
+          <h2>{t.recordings.emptyTitle}</h2>
+          <p>{t.recordings.emptyBody}</p>
         </div>
       ) : (
         <>
           {usedSections.length > 0 && (
             <div className="chips rec-filter">
               <button className={`chip ${filter === null ? "on" : ""}`} onClick={() => setFilter(null)}>
-                Hepsi ({r.recordings.length})
+                {t.recordings.allCount(r.recordings.length)}
               </button>
               <button className={`chip ${filter === "" ? "on" : ""}`} onClick={() => setFilter("")}>
-                Bütün şarkı
+                {t.common.wholeSong}
               </button>
               {usedSections.map((s) => (
                 <button key={s.id} className={`chip ${filter === s.id ? "on" : ""}`} onClick={() => setFilter(s.id)}>
@@ -120,7 +121,7 @@ export function RecordingsPanel({ song, library }: Props) {
                 onTrim={async (wav, durationMs) => {
                   await r.add({
                     blob: wav,
-                    title: `${rec.title || "Kayıt"} (kırpılmış)`,
+                    title: t.recordings.trimmedTitle(rec.title || t.common.recording),
                     sectionId: rec.sectionId,
                     durationMs,
                     source: rec.source,
@@ -135,13 +136,9 @@ export function RecordingsPanel({ song, library }: Props) {
 
       {deleting && (
         <ConfirmDialog
-          title="Kaydı sil"
-          message={
-            <>
-              <strong>{deleting.title || "Adsız kayıt"}</strong> ve ses dosyası kalıcı olarak silinecek. Bu işlem geri alınamaz.
-            </>
-          }
-          confirmLabel="Sil"
+          title={t.recordings.deleteRecording}
+          message={<RichText parts={t.recordings.deleteRecordingBody(deleting.title || t.common.untitledRecording)} />}
+          confirmLabel={t.common.delete}
           onConfirm={() => r.remove(deleting)}
           onClose={() => setDeleting(null)}
         />
@@ -149,8 +146,8 @@ export function RecordingsPanel({ song, library }: Props) {
 
       {r.error && (
         <div className="toast" role="alert">
-          <span>Bir sorun oldu: {r.error}</span>
-          <button onClick={r.clearError} aria-label="Kapat">
+          <span>{t.common.problem(r.error)}</span>
+          <button onClick={r.clearError} aria-label={t.common.close}>
             ×
           </button>
         </div>
@@ -169,6 +166,7 @@ interface ItemProps {
 }
 
 function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: ItemProps) {
+  const t = useT();
   const [title, setTitle] = useState(rec.title);
   const [showWave, setShowWave] = useState(false);
   const [note, setNote] = useState(rec.note);
@@ -189,7 +187,7 @@ function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: It
         {src ? (
           <audio className="rec-audio" src={src} controls autoPlay />
         ) : (
-          <button className="play-btn" onClick={play} aria-label="Dinle">
+          <button className="play-btn" onClick={play} aria-label={t.common.listen}>
             ▶
           </button>
         )}
@@ -197,25 +195,25 @@ function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: It
           <input
             className="rec-title"
             value={title}
-            placeholder="Adsız kayıt"
+            placeholder={t.common.untitledRecording}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => title !== rec.title && onUpdate({ title })}
-            aria-label="Kayıt adı"
+            aria-label={t.recordings.titleLabel}
           />
           <div className="rec-meta">
-            <span className={`badge ${rec.source}`}>{rec.source === "dosya" ? "Dosya" : "Kayıt"}</span>
+            <span className={`badge ${rec.source}`}>{rec.source === "dosya" ? t.recordings.sourceFile : t.recordings.sourceRecording}</span>
             <span>{formatDuration(rec.durationMs)}</span>
             <span>{formatSize(rec.sizeBytes)}</span>
-            <span>{dateFmt.format(new Date(rec.createdAt))}</span>
+            <span>{formatDateTime(rec.createdAt)}</span>
           </div>
         </div>
         <select
           className="select rec-section"
           value={rec.sectionId ?? ""}
           onChange={(e) => onUpdate({ sectionId: e.target.value || null })}
-          aria-label="Bağlı bölüm"
+          aria-label={t.recordings.linkedSection}
         >
-          <option value="">Bütün şarkı</option>
+          <option value="">{t.common.wholeSong}</option>
           {sections.map((s) => (
             <option key={s.id} value={s.id}>
               {sectionTitle(s, sections)}
@@ -224,24 +222,24 @@ function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: It
         </select>
         <button
           className={`icon-btn wave-toggle ${showWave ? "on" : ""}`}
-          title="Dalga formu ve kırpma"
-          aria-label="Dalga formu ve kırpma"
+          title={t.recordings.waveform}
+          aria-label={t.recordings.waveform}
           aria-pressed={showWave}
           onClick={() => setShowWave((v) => !v)}
         >
           〰
         </button>
-        <button className="icon-btn" title="Kaydı sil" aria-label="Kaydı sil" onClick={onDelete}>
+        <button className="icon-btn" title={t.recordings.deleteRecording} aria-label={t.recordings.deleteRecording} onClick={onDelete}>
           ×
         </button>
       </div>
-      {loadError && <div className="rec-error">Ses açılamadı: {loadError}</div>}
+      {loadError && <div className="rec-error">{t.recordings.loadFailed(loadError)}</div>}
       {showWave && <WaveformEditor rec={rec} urlFor={urlFor} onTrim={onTrim} />}
       <textarea
         className="rec-note"
         value={note}
         rows={1}
-        placeholder="Not: hangi enstrüman, ne denendi, neyi beğendin…"
+        placeholder={t.recordings.notePlaceholder}
         onChange={(e) => setNote(e.target.value)}
         onBlur={() => note !== rec.note && onUpdate({ note })}
       />

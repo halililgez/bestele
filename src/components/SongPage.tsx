@@ -4,7 +4,6 @@ import {
   MAX_CAPO,
   MUSICAL_KEYS,
   normalizeCapo,
-  STATUS_LABELS,
   STATUS_ORDER,
   TIME_SIGNATURES,
   type Song,
@@ -16,15 +15,11 @@ import { ConfirmDialog } from "./Dialog";
 import { SongSheet } from "./SongSheet";
 import { RecordingsPanel } from "./RecordingsPanel";
 import { DevelopmentPanel } from "./DevelopmentPanel";
+import { RichText, useT } from "../i18n";
 
 type Tab = "bilgi" | "beste" | "kayitlar" | "gelisim";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "beste", label: "Beste sayfası" },
-  { id: "kayitlar", label: "Kayıtlar" },
-  { id: "gelisim", label: "Gelişim" },
-  { id: "bilgi", label: "Bilgiler" },
-];
+const TABS: Tab[] = ["beste", "kayitlar", "gelisim", "bilgi"];
 
 const SAVE_DELAY = 500;
 
@@ -35,6 +30,7 @@ interface Props {
 }
 
 export function SongPage({ song, library, onBack }: Props) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("beste");
   const [draft, setDraft] = useState<Song>(song);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -56,7 +52,7 @@ export function SongPage({ song, library, onBack }: Props) {
       const i = Number(e.key) - 1;
       if (i >= 0 && i < TABS.length) {
         e.preventDefault();
-        setTab(TABS[i].id);
+        setTab(TABS[i]);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -99,28 +95,28 @@ export function SongPage({ song, library, onBack }: Props) {
     <div className="paper">
       <div className="song-page">
         <button className="back" onClick={onBack}>
-          ← Şarkılar
+          {t.song.back}
         </button>
 
         <input
           className="title-input"
           value={draft.title}
-          placeholder="Adsız şarkı"
+          placeholder={t.common.untitledSong}
           onChange={(e) => change("title", e.target.value)}
-          aria-label="Şarkının adı"
+          aria-label={t.song.titleLabel}
         />
         <input
           className="writer-input"
           value={draft.writer}
-          placeholder="Söz / müzik…"
+          placeholder={t.song.writerPlaceholder}
           onChange={(e) => change("writer", e.target.value)}
-          aria-label="Söz ve müzik"
+          aria-label={t.song.writerLabel}
         />
 
         <div className="tabs" role="tablist">
-          {TABS.map((t) => (
-            <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
-              {t.label}
+          {TABS.map((id) => (
+            <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
+              {t.song.tabs[id]}
             </button>
           ))}
         </div>
@@ -133,19 +129,19 @@ export function SongPage({ song, library, onBack }: Props) {
           <>
             <div className="fields">
               <label className="field">
-                <span>Durum</span>
+                <span>{t.song.status}</span>
                 <select value={draft.status} onChange={(e) => change("status", e.target.value as SongStatus)}>
                   {STATUS_ORDER.map((s) => (
                     <option key={s} value={s}>
-                      {STATUS_LABELS[s]}
+                      {t.status[s]}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="field">
-                <span>Ton</span>
+                <span>{t.common.key}</span>
                 <select value={draft.musicalKey} onChange={(e) => change("musicalKey", e.target.value)}>
-                  <option value="">Belirsiz</option>
+                  <option value="">{t.common.keyUnset}</option>
                   {MUSICAL_KEYS.map((k) => (
                     <option key={k} value={k}>
                       {k}
@@ -154,7 +150,7 @@ export function SongPage({ song, library, onBack }: Props) {
                 </select>
               </label>
               <label className="field">
-                <span>Tempo (BPM)</span>
+                <span>{t.common.tempoBpm}</span>
                 <input
                   type="number"
                   min={20}
@@ -168,29 +164,29 @@ export function SongPage({ song, library, onBack }: Props) {
                 />
               </label>
               <label className="field">
-                <span>Ölçü</span>
+                <span>{t.common.timeSignature}</span>
                 <select value={draft.timeSignature} onChange={(e) => change("timeSignature", e.target.value)}>
-                  {TIME_SIGNATURES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  {TIME_SIGNATURES.map((ts) => (
+                    <option key={ts} value={ts}>
+                      {ts}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="field">
-                <span>Capo</span>
-                <select value={draft.capo} onChange={(e) => change("capo", normalizeCapo(e.target.value))} title="Gitarda capo takılan perde">
+                <span>{t.common.capo}</span>
+                <select value={draft.capo} onChange={(e) => change("capo", normalizeCapo(e.target.value))} title={t.song.capoTitle}>
                   {Array.from({ length: MAX_CAPO + 1 }, (_, n) => (
                     <option key={n} value={n}>
-                      {n === 0 ? "Yok" : `${n}. perde`}
+                      {n === 0 ? t.song.capoNone : t.song.capoFret(n)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="field">
-                <span>Klasör</span>
+                <span>{t.song.folder}</span>
                 <select value={draft.folderId ?? ""} onChange={(e) => change("folderId", e.target.value || null)}>
-                  <option value="">Klasörsüz</option>
+                  <option value="">{t.common.unfiled}</option>
                   {library.folders.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.name}
@@ -202,14 +198,14 @@ export function SongPage({ song, library, onBack }: Props) {
 
             <div className="fields" style={{ gridTemplateColumns: "1fr" }}>
               <div className="field">
-                <span>Etiketler</span>
+                <span>{t.song.tags}</span>
                 <TagEditor tags={draft.tags} onChange={(tags) => change("tags", tags)} />
               </div>
               <label className="field">
-                <span>Notlar</span>
+                <span>{t.song.notes}</span>
                 <textarea
                   value={draft.notes}
-                  placeholder="Fikirler, ilham, kime gidecek, ne eksik…"
+                  placeholder={t.song.notesPlaceholder}
                   onChange={(e) => change("notes", e.target.value)}
                 />
               </label>
@@ -217,10 +213,10 @@ export function SongPage({ song, library, onBack }: Props) {
 
             <div className="page-actions">
               <span>
-                Oluşturuldu {relativeTime(song.createdAt)} · son değişiklik {relativeTime(song.updatedAt)}
+                {t.song.created(relativeTime(song.createdAt), relativeTime(song.updatedAt))}
               </span>
               <button className="btn btn-danger" onClick={() => setConfirmDelete(true)}>
-                Şarkıyı sil
+                {t.song.deleteSong}
               </button>
             </div>
           </>
@@ -231,13 +227,9 @@ export function SongPage({ song, library, onBack }: Props) {
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Şarkıyı sil"
-          message={
-            <>
-              <strong>{draft.title || "Adsız şarkı"}</strong> kalıcı olarak silinecek. Bu işlem geri alınamaz.
-            </>
-          }
-          confirmLabel="Sil"
+          title={t.song.deleteSong}
+          message={<RichText parts={t.song.deleteSongBody(draft.title || t.common.untitledSong)} />}
+          confirmLabel={t.common.delete}
           onConfirm={async () => {
             window.clearTimeout(timer.current);
             pending.current = {};
@@ -252,6 +244,7 @@ export function SongPage({ song, library, onBack }: Props) {
 }
 
 function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const t = useT();
   const [input, setInput] = useState("");
 
   function commit() {
@@ -262,17 +255,17 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string
 
   return (
     <div className="tag-editor">
-      {tags.map((t) => (
-        <span key={t} className="tag-token">
-          #{t}
-          <button aria-label={`${t} etiketini kaldır`} onClick={() => onChange(tags.filter((x) => x !== t))}>
+      {tags.map((tag) => (
+        <span key={tag} className="tag-token">
+          #{tag}
+          <button aria-label={t.song.removeTag(tag)} onClick={() => onChange(tags.filter((x) => x !== tag))}>
             ×
           </button>
         </span>
       ))}
       <input
         value={input}
-        placeholder={tags.length ? "" : "Etiket ekle (Enter)…  ör. aşk, akustik"}
+        placeholder={tags.length ? "" : t.song.tagPlaceholder}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === ",") {

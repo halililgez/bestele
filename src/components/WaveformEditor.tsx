@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { Recording } from "../types";
 import { computePeaks, encodeWav, formatTime } from "../audioTools";
+import { t as msg, useT } from "../i18n";
 
 interface Props {
   rec: Recording;
@@ -15,6 +16,7 @@ type Range = { start: number; end: number };
 
 /** Kaydın dalga formu: tıklayınca oradan çalar, sürükleyince aralık seçer, seçilen aralık yeni kayıt olarak kırpılır. */
 export function WaveformEditor({ rec, urlFor, onTrim }: Props) {
+  const t = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const buffer = useRef<AudioBuffer | null>(null);
@@ -48,7 +50,7 @@ export function WaveformEditor({ rec, urlFor, onTrim }: Props) {
         a.onplay = () => setPlaying(true);
         audio.current = a;
       } catch (e) {
-        if (!cancelled) setError(`Ses çözülemedi: ${String(e)}`);
+        if (!cancelled) setError(msg().waveform.decodeFailed(String(e)));
       }
     })();
     return () => {
@@ -177,7 +179,7 @@ export function WaveformEditor({ rec, urlFor, onTrim }: Props) {
   return (
     <div className="wave">
       {!peaks ? (
-        <div className="wave-loading">Dalga formu hazırlanıyor…</div>
+        <div className="wave-loading">{t.waveform.preparing}</div>
       ) : (
         <canvas
           ref={canvas}
@@ -185,12 +187,12 @@ export function WaveformEditor({ rec, urlFor, onTrim }: Props) {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          aria-label="Dalga formu: tıkla ve çal, sürükle ve seç"
+          aria-label={t.waveform.canvasLabel}
         />
       )}
       <div className="wave-controls">
         <button className="btn" onClick={playRange} disabled={!peaks}>
-          {playing ? "❚❚ Durdur" : range ? "▶ Seçimi dinle" : "▶ Çal"}
+          {playing ? t.waveform.pause : range ? t.waveform.playSelection : t.waveform.play}
         </button>
         <span className="wave-time">
           {formatTime(head)} / {formatTime(duration)}
@@ -198,18 +200,18 @@ export function WaveformEditor({ rec, urlFor, onTrim }: Props) {
         {range ? (
           <>
             <span className="wave-sel">
-              Seçim: {formatTime(range.start)} – {formatTime(range.end)} ({len.toFixed(1)} sn)
+              {t.waveform.selection(formatTime(range.start), formatTime(range.end), len.toFixed(1))}
             </span>
             <button className="link-btn" onClick={() => setRange(null)}>
-              Seçimi kaldır
+              {t.waveform.clearSelection}
             </button>
             <span className="toolbar-spacer" />
             <button className="btn btn-primary" onClick={trim} disabled={saving || len < 0.2}>
-              {saving ? "Kaydediliyor…" : "Seçimi yeni kayıt olarak kaydet"}
+              {saving ? t.common.saving : t.waveform.saveSelection}
             </button>
           </>
         ) : (
-          <span className="muted wave-hint">Bir parçayı kırpmak için dalga formunun üstünde sürükle.</span>
+          <span className="muted wave-hint">{t.waveform.hint}</span>
         )}
       </div>
     </div>

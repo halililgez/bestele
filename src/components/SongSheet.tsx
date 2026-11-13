@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { downloadFile, safeFileName, songToChordPro, songToText } from "../exporting";
 import type { Library } from "../useLibrary";
 import { useSections } from "../useSections";
-import { SECTION_LABELS, SECTION_ORDER, type Section, type SectionKind, type Song } from "../types";
+import { SECTION_ORDER, type Section, type SectionKind, type Song } from "../types";
 import { chordsIn, diatonicChords, playView, prefersFlats, tokenizeLine, transposeKey, transposeText } from "../chords";
 import { ConfirmDialog } from "./Dialog";
 import { sectionTitle } from "../sectionTitle";
 import { MetronomeControl } from "./MetronomeControl";
 import { StageMode } from "./StageMode";
 import { ChordStrip } from "./ChordDiagram";
+import { RichText, useT } from "../i18n";
 
 type Mode = "yaz" | "oku";
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function SongSheet({ song, library }: Props) {
+  const t = useT();
   const s = useSections(song.id, () => library.markTouched(song.id));
   const [mode, setMode] = useState<Mode>("yaz");
   const [transpose, setTranspose] = useState(0);
@@ -76,7 +78,7 @@ export function SongSheet({ song, library }: Props) {
   const capoOn = capo > 0 && playCapo;
   // Oku / sahne / şemalarda gösterilen akorlar (capo açıksa çalınan şekiller)
   const view = capoOn ? playView(key, transpose, capo) : { semis: transpose, key: targetKey, flats };
-  const capoLabel = capo > 0 ? (capoOn && view.key ? `Capo ${capo} · ${view.key} şekli` : `Capo ${capo}`) : "";
+  const capoLabel = capo > 0 ? (capoOn && view.key ? t.sheet.capoShape(capo, view.key) : t.sheet.capoLabel(capo)) : "";
 
   const used = useMemo(() => chordsIn(s.sections.map((x) => x.content).join("\n")), [s.sections]);
   const diatonic = useMemo(() => diatonicChords(key || "C"), [key]);
@@ -147,23 +149,23 @@ export function SongSheet({ song, library }: Props) {
   return (
     <div className="sheet-wrap">
       <div className="sheet-toolbar">
-        <div className="segmented" role="radiogroup" aria-label="Görünüm">
+        <div className="segmented" role="radiogroup" aria-label={t.sheet.view}>
           <button role="radio" aria-checked={mode === "yaz"} className={mode === "yaz" ? "on" : ""} onClick={() => setMode("yaz")}>
-            Yaz
+            {t.sheet.write}
           </button>
           <button role="radio" aria-checked={mode === "oku"} className={mode === "oku" ? "on" : ""} onClick={() => setMode("oku")}>
-            Oku
+            {t.sheet.read}
           </button>
         </div>
 
         {mode === "oku" && (
           <>
-            <div className="stepper" aria-label="Transpoze">
-              <button className="icon-btn" aria-label="Yarım ses aşağı" onClick={() => setTranspose((t) => t - 1)}>
+            <div className="stepper" aria-label={t.sheet.transpose}>
+              <button className="icon-btn" aria-label={t.sheet.semitoneDown} onClick={() => setTranspose((t) => t - 1)}>
                 −
               </button>
               <span className="stepper-label">
-                {transpose === 0 ? "Transpoze" : `${transpose > 0 ? "+" : ""}${transpose}`}
+                {transpose === 0 ? t.sheet.transpose : `${transpose > 0 ? "+" : ""}${transpose}`}
                 {key && transpose !== 0 && (
                   <>
                     {" · "}
@@ -171,56 +173,56 @@ export function SongSheet({ song, library }: Props) {
                   </>
                 )}
               </span>
-              <button className="icon-btn" aria-label="Yarım ses yukarı" onClick={() => setTranspose((t) => t + 1)}>
+              <button className="icon-btn" aria-label={t.sheet.semitoneUp} onClick={() => setTranspose((t) => t + 1)}>
                 +
               </button>
             </div>
             {transpose !== 0 && (
               <>
                 <button className="btn" onClick={() => setTranspose(0)}>
-                  Sıfırla
+                  {t.sheet.reset}
                 </button>
                 <button className="btn btn-primary" onClick={applyTranspose}>
-                  Bu tonda kaydet
+                  {t.sheet.saveInKey}
                 </button>
               </>
             )}
-            <div className="stepper" aria-label="Yazı boyutu">
-              <button className="icon-btn" aria-label="Yazıyı küçült" onClick={() => setScale((v) => Math.max(0.7, v - 0.1))}>
+            <div className="stepper" aria-label={t.sheet.fontSize}>
+              <button className="icon-btn" aria-label={t.common.fontSmaller} onClick={() => setScale((v) => Math.max(0.7, v - 0.1))}>
                 A−
               </button>
-              <button className="icon-btn" aria-label="Yazıyı büyüt" onClick={() => setScale((v) => Math.min(2, v + 0.1))}>
+              <button className="icon-btn" aria-label={t.common.fontLarger} onClick={() => setScale((v) => Math.min(2, v + 0.1))}>
                 A+
               </button>
             </div>
             <button className={`chip ${showShapes ? "on" : ""}`} onClick={toggleShapes} aria-pressed={showShapes}>
-              Akor şemaları
+              {t.sheet.chordShapes}
             </button>
             {capo > 0 && (
               <button
                 className={`chip ${capoOn ? "on" : ""}`}
                 onClick={togglePlayCapo}
                 aria-pressed={capoOn}
-                title="Açıkken akorlar capo'ya göre çalınan şekilleriyle gösterilir; ses değişmez"
+                title={t.sheet.playWithCapoTitle}
               >
-                Capo {capo} ile çal
+                {t.sheet.playWithCapo(capo)}
               </button>
             )}
             <span className="toolbar-spacer" />
             <div className="export-group">
-              <button className="btn btn-primary" onClick={() => setStage(true)} title="Tam ekran, büyük yazı, otomatik kaydırma">
-                Sahne modu
+              <button className="btn btn-primary" onClick={() => setStage(true)} title={t.sheet.stageModeTitle}>
+                {t.sheet.stageMode}
               </button>
               <button className="btn" onClick={() => window.print()} title="Ctrl + P">
-                Yazdır
+                {t.sheet.print}
               </button>
-              <button className="btn" onClick={copyText} title="Akorları sözlerin üstünde, düz metin olarak kopyalar">
-                {copied ? "Kopyalandı ✓" : "Metni kopyala"}
+              <button className="btn" onClick={copyText} title={t.sheet.copyTitle}>
+                {copied ? t.sheet.copied : t.sheet.copyText}
               </button>
-              <button className="btn" onClick={() => exportAs("txt")} title="Düz metin dosyası (.txt)">
+              <button className="btn" onClick={() => exportAs("txt")} title={t.sheet.txtTitle}>
                 .txt
               </button>
-              <button className="btn" onClick={() => exportAs("cho")} title="ChordPro dosyası: akor uygulamalarının çoğu açabilir">
+              <button className="btn" onClick={() => exportAs("cho")} title={t.sheet.chordProTitle}>
                 ChordPro
               </button>
             </div>
@@ -247,15 +249,15 @@ export function SongSheet({ song, library }: Props) {
 
       {mode === "yaz" && s.sections.length > 0 && (
         <div className="palette" onMouseDown={(e) => e.target instanceof HTMLButtonElement && e.preventDefault()}>
-          <span className="palette-title">{key ? `${key} tonunda` : "Ton seçilmedi (C)"}</span>
+          <span className="palette-title">{key ? t.sheet.inKey(key) : t.sheet.noKey}</span>
           {diatonic.map((c) => (
-            <button key={c} className="chord-chip" onClick={() => insertChord(c)} title={`[${c}] ekle`}>
+            <button key={c} className="chord-chip" onClick={() => insertChord(c)} title={t.sheet.insertChord(c)}>
               {c}
             </button>
           ))}
           {extraUsed.length > 0 && <span className="palette-sep" />}
           {extraUsed.map((c) => (
-            <button key={c} className="chord-chip used" onClick={() => insertChord(c)} title={`[${c}] ekle`}>
+            <button key={c} className="chord-chip used" onClick={() => insertChord(c)} title={t.sheet.insertChord(c)}>
               {c}
             </button>
           ))}
@@ -267,30 +269,32 @@ export function SongSheet({ song, library }: Props) {
               setCustomChord("");
             }}
           >
-            <input value={customChord} onChange={(e) => setCustomChord(e.target.value)} placeholder="Başka akor…" aria-label="Akor yaz ve ekle" />
+            <input value={customChord} onChange={(e) => setCustomChord(e.target.value)} placeholder={t.sheet.otherChord} aria-label={t.sheet.otherChordLabel} />
           </form>
         </div>
       )}
 
       {s.sections.length === 0 ? (
         <div className="empty sheet-empty">
-          <h2>Sayfa boş</h2>
-          <p>Bir bölüm ekleyerek başla ya da hazır bir şarkı yapısıyla başla.</p>
+          <h2>{t.sheet.emptyTitle}</h2>
+          <p>{t.sheet.emptyBody}</p>
           <div className="add-row center">
             {QUICK_KINDS.slice(0, 4).map((k) => (
               <button key={k} className="btn" onClick={() => s.add(k)}>
-                + {SECTION_LABELS[k]}
+                + {t.sectionKinds[k]}
               </button>
             ))}
           </div>
           <button className="btn btn-primary" onClick={addTemplate}>
-            Hazır yapı: Kıta · Nakarat · Kıta · Nakarat · Köprü · Nakarat
+            {t.sheet.template}
           </button>
         </div>
       ) : mode === "yaz" ? (
         <>
           <p className="hint">
-            Akorları köşeli parantezle sözün içine yaz: <code>[Am]Gece ya[F]rısı</code>. Yukarıdaki akorlara tıklayınca imlecin olduğu yere eklenir.
+            {t.sheet.hintBefore}
+            <code>{t.sheet.hintExample}</code>
+            {t.sheet.hintAfter}
           </p>
           {s.sections.map((sec, i) => (
             <div className="section-card" key={sec.id}>
@@ -299,11 +303,11 @@ export function SongSheet({ song, library }: Props) {
                   className="kind-select"
                   value={sec.kind}
                   onChange={(e) => s.update(sec.id, { kind: e.target.value as SectionKind })}
-                  aria-label="Bölüm türü"
+                  aria-label={t.sheet.sectionKind}
                 >
                   {SECTION_ORDER.map((k) => (
                     <option key={k} value={k}>
-                      {SECTION_LABELS[k]}
+                      {t.sectionKinds[k]}
                     </option>
                   ))}
                 </select>
@@ -312,16 +316,16 @@ export function SongSheet({ song, library }: Props) {
                   value={sec.label}
                   placeholder={sectionTitle({ ...sec, label: "" }, s.sections)}
                   onChange={(e) => s.update(sec.id, { label: e.target.value })}
-                  aria-label="Bölüm adı"
+                  aria-label={t.sheet.sectionName}
                 />
                 <span className="section-actions">
-                  <button className="icon-btn" title="Yukarı taşı" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => s.move(sec.id, -1)}>
+                  <button className="icon-btn" title={t.sheet.moveUp} aria-label={t.sheet.moveUp} disabled={i === 0} onClick={() => s.move(sec.id, -1)}>
                     ↑
                   </button>
                   <button
                     className="icon-btn"
-                    title="Aşağı taşı"
-                    aria-label="Aşağı taşı"
+                    title={t.sheet.moveDown}
+                    aria-label={t.sheet.moveDown}
                     disabled={i === s.sections.length - 1}
                     onClick={() => s.move(sec.id, 1)}
                   >
@@ -329,16 +333,16 @@ export function SongSheet({ song, library }: Props) {
                   </button>
                   <button
                     className="icon-btn"
-                    title="Çoğalt"
-                    aria-label="Çoğalt"
+                    title={t.sheet.duplicate}
+                    aria-label={t.sheet.duplicate}
                     onClick={() => s.add(sec.kind, i + 1, { label: sec.label, content: sec.content })}
                   >
                     ⧉
                   </button>
                   <button
                     className="icon-btn"
-                    title="Bölümü sil"
-                    aria-label="Bölümü sil"
+                    title={t.sheet.deleteSection}
+                    aria-label={t.sheet.deleteSection}
                     onClick={() => (sec.content.trim() ? setDeleting(sec) : s.remove(sec.id))}
                   >
                     ×
@@ -349,7 +353,7 @@ export function SongSheet({ song, library }: Props) {
                 className="section-text"
                 value={sec.content}
                 rows={Math.max(3, sec.content.split("\n").length + 1)}
-                placeholder={"[Am]Sözler buraya…\n[F]akorlar köşeli parantezde"}
+                placeholder={t.sheet.lyricsPlaceholder}
                 spellCheck={false}
                 onFocus={(e) => (active.current = { id: sec.id, el: e.currentTarget })}
                 onChange={(e) => s.update(sec.id, { content: e.target.value })}
@@ -357,10 +361,10 @@ export function SongSheet({ song, library }: Props) {
             </div>
           ))}
           <div className="add-row">
-            <span className="add-label">Bölüm ekle:</span>
+            <span className="add-label">{t.sheet.addSection}</span>
             {QUICK_KINDS.map((k) => (
               <button key={k} className="chip" onClick={() => s.add(k)}>
-                + {SECTION_LABELS[k]}
+                + {t.sectionKinds[k]}
               </button>
             ))}
           </div>
@@ -368,11 +372,11 @@ export function SongSheet({ song, library }: Props) {
       ) : (
         <div className="sheet" style={{ fontSize: `${scale}em` }}>
           <header className="print-head">
-            <h1>{song.title || "Adsız şarkı"}</h1>
+            <h1>{song.title || t.common.untitledSong}</h1>
             <p>
               {[
                 song.writer,
-                targetKey && `Ton: ${targetKey}`,
+                targetKey && t.sheet.keyMeta(targetKey),
                 song.tempo && `${song.tempo} BPM`,
                 song.timeSignature,
                 capoLabel,
@@ -383,7 +387,7 @@ export function SongSheet({ song, library }: Props) {
           </header>
           {showShapes && <ChordStrip chords={chordsIn(transposeText(s.sections.map((x) => x.content).join("\n"), view.semis, view.flats))} />}
           {s.sections.every((sec) => !sec.content.trim()) && (
-            <p className="hint">Bölümler henüz boş. "Yaz" görünümünde söz ve akor ekleyebilirsin.</p>
+            <p className="hint">{t.sheet.allEmpty}</p>
           )}
           {s.sections.filter((sec) => sec.content.trim()).map((sec) => (
             <section className={`sheet-section kind-${sec.kind}`} key={sec.id}>
@@ -396,13 +400,9 @@ export function SongSheet({ song, library }: Props) {
 
       {deleting && (
         <ConfirmDialog
-          title="Bölümü sil"
-          message={
-            <>
-              <strong>{sectionTitle(deleting, s.sections)}</strong> bölümü ve içindeki sözler silinecek.
-            </>
-          }
-          confirmLabel="Sil"
+          title={t.sheet.deleteSection}
+          message={<RichText parts={t.sheet.deleteSectionBody(sectionTitle(deleting, s.sections))} />}
+          confirmLabel={t.common.delete}
           onConfirm={() => s.remove(deleting.id)}
           onClose={() => setDeleting(null)}
         />
@@ -410,8 +410,8 @@ export function SongSheet({ song, library }: Props) {
 
       {s.error && (
         <div className="toast" role="alert">
-          <span>Bir sorun oldu: {s.error}</span>
-          <button onClick={s.clearError} aria-label="Kapat">
+          <span>{t.common.problem(s.error)}</span>
+          <button onClick={s.clearError} aria-label={t.common.close}>
             ×
           </button>
         </div>

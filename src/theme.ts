@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 
 export type Theme = "defter" | "modern" | "gece";
 
-export const THEME_LABELS: Record<Theme, string> = {
-  defter: "Defter",
-  modern: "Modern",
-  gece: "Gece",
-};
+export const THEMES: Theme[] = ["defter", "modern", "gece"];
 
 const KEY = "bestele:theme";
 
