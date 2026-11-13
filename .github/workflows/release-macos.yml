@@ -42,6 +42,16 @@ jobs:
       - run: npm test
       - run: npm run tauri build -- --target universal-apple-darwin
 
+      - name: İmzayı ve mikrofon iznini doğrula
+        run: |
+          APP=src-tauri/target/universal-apple-darwin/release/bundle/macos/Bestele.app
+          codesign -dv --verbose=2 "$APP" 2>&1
+          echo "--- entitlements ---"
+          codesign -d --entitlements - --xml "$APP" | plutil -p -
+          codesign -d --entitlements - --xml "$APP" | grep -q "com.apple.security.device.audio-input"
+          echo "--- Info.plist ---"
+          plutil -extract NSMicrophoneUsageDescription raw "$APP/Contents/Info.plist"
+
       - name: Sürüme ekle
         env:
           GH_TOKEN: ${{ github.token }}
