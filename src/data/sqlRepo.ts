@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { Folder, Recording, Section, SectionKind, Song, SongFields, SongStatus, Version } from "../types";
+import { normalizeCapo, type Folder, type Recording, type Section, type SectionKind, type Song, type SongFields, type SongStatus, type Version } from "../types";
 import { newId, type Repo } from "./repo";
 
 interface SongRow {
@@ -9,6 +9,7 @@ interface SongRow {
   musical_key: string;
   tempo: number | null;
   time_signature: string;
+  capo: number | null;
   status: string;
   notes: string;
   folder_id: string | null;
@@ -83,6 +84,8 @@ const MIGRATIONS: string[] = [
      created_at INTEGER NOT NULL
    );
    CREATE INDEX IF NOT EXISTS idx_versions_song ON versions(song_id, created_at);`,
+  // 5: Gitar capo perdesi
+  `ALTER TABLE songs ADD COLUMN capo INTEGER NOT NULL DEFAULT 0`,
 ];
 
 interface VersionRow {
@@ -197,6 +200,7 @@ function toSong(r: SongRow): Song {
     musicalKey: r.musical_key,
     tempo: r.tempo,
     timeSignature: r.time_signature,
+    capo: normalizeCapo(r.capo),
     status: r.status as SongStatus,
     notes: r.notes,
     folderId: r.folder_id,
@@ -212,6 +216,7 @@ const COLUMNS: Record<keyof SongFields, string> = {
   musicalKey: "musical_key",
   tempo: "tempo",
   timeSignature: "time_signature",
+  capo: "capo",
   status: "status",
   notes: "notes",
   folderId: "folder_id",
@@ -219,7 +224,9 @@ const COLUMNS: Record<keyof SongFields, string> = {
 };
 
 function toDbValue(key: keyof SongFields, value: unknown) {
-  return key === "tags" ? JSON.stringify(value ?? []) : value;
+  if (key === "tags") return JSON.stringify(value ?? []);
+  if (key === "capo") return normalizeCapo(value);
+  return value;
 }
 
 export async function createSqlRepo(): Promise<Repo> {
@@ -470,9 +477,9 @@ export async function createSqlRepo(): Promise<Repo> {
       let added = 0;
       for (const s of data.songs) {
         added += await ins(
-          `INSERT OR IGNORE INTO songs (id, title, writer, musical_key, tempo, time_signature, status, notes, folder_id, tags, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-          [s.id, s.title, s.writer, s.musicalKey, s.tempo, s.timeSignature, s.status, s.notes, s.folderId, JSON.stringify(s.tags), s.createdAt, s.updatedAt],
+          `INSERT OR IGNORE INTO songs (id, title, writer, musical_key, tempo, time_signature, capo, status, notes, folder_id, tags, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [s.id, s.title, s.writer, s.musicalKey, s.tempo, s.timeSignature, normalizeCapo(s.capo), s.status, s.notes, s.folderId, JSON.stringify(s.tags), s.createdAt, s.updatedAt],
         );
       }
       for (const s of data.sections) {

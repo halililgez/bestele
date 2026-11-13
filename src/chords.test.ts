@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { normalizeCapo } from "./types";
 import {
   chordsIn,
   diatonicChords,
   parseChord,
+  playView,
   prefersFlats,
   tokenizeLine,
   transposeChord,
@@ -77,5 +79,32 @@ describe("tokenizeLine", () => {
   });
   it("chordsIn tekrarları atar", () => {
     expect(chordsIn("[Am]a [F]b [Am]c")).toEqual(["Am", "F"]);
+  });
+});
+
+describe("capo ile çalma", () => {
+  it("capo kadar aşağı şekil gösterir, ses tonu aynı kalır", () => {
+    expect(playView("Bm", 0, 2)).toEqual({ semis: -2, key: "Am", flats: false });
+    expect(transposeText("[Bm]a [G]b [D]c [A]d", playView("Bm", 0, 2).semis)).toBe("[Am]a [F]b [C]c [G]d");
+  });
+  it("transpoze ile birlikte çalışır", () => {
+    // Am → +2 = Bm, capo 2 → yine Am şekli
+    expect(playView("Am", 2, 2)).toEqual({ semis: 0, key: "Am", flats: false });
+    expect(playView("C", 0, 3).key).toBe("A");
+    expect(playView("Eb", 0, 1)).toEqual({ semis: -1, key: "D", flats: false });
+  });
+  it("ton yoksa yalnızca kaydırma uygulanır", () => {
+    expect(playView("", 1, 3)).toEqual({ semis: -2, key: "", flats: false });
+  });
+});
+
+describe("normalizeCapo", () => {
+  it("eksik, bozuk ve aralık dışı değerleri düzeltir", () => {
+    expect(normalizeCapo(undefined)).toBe(0);
+    expect(normalizeCapo("3")).toBe(3);
+    expect(normalizeCapo("abc")).toBe(0);
+    expect(normalizeCapo(-2)).toBe(0);
+    expect(normalizeCapo(14)).toBe(9);
+    expect(normalizeCapo(2.6)).toBe(3);
   });
 });

@@ -62,6 +62,24 @@ export function prefersFlats(key: string): boolean {
   return FLAT_KEYS.has(key.trim());
 }
 
+export interface PlayView {
+  /** Yazılı akorlara uygulanacak toplam kaydırma (yarım ses) */
+  semis: number;
+  /** Gösterilen akorların tonu (capo açıksa çalınan şeklin tonu) */
+  key: string;
+  flats: boolean;
+}
+
+/**
+ * Ekranda gösterilecek akorları hesaplar: önce transpoze, sonra capo kadar aşağı.
+ * Capo takılıyken ses aynı kalır; yalnızca parmakların bastığı şekil değişir (ör. Bm tonunda capo 2 → Am şekli).
+ */
+export function playView(key: string, transpose: number, capo: number): PlayView {
+  const sounding = key ? transposeKey(key, transpose) : "";
+  const shape = sounding && capo ? transposeKey(sounding, -capo) : sounding;
+  return { semis: transpose - capo, key: shape, flats: shape ? prefersFlats(shape) : false };
+}
+
 const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
 const MAJOR_QUALITIES = ["", "m", "m", "", "", "m", "dim"];
 const MINOR_STEPS = [0, 2, 3, 5, 7, 8, 10];

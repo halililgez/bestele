@@ -3,7 +3,7 @@ import { downloadFile, safeFileName, songToChordPro, songToText } from "../expor
 import type { Library } from "../useLibrary";
 import { useSections } from "../useSections";
 import { SECTION_LABELS, SECTION_ORDER, type Section, type SectionKind, type Song } from "../types";
-import { chordsIn, diatonicChords, prefersFlats, tokenizeLine, transposeKey, transposeText } from "../chords";
+import { chordsIn, diatonicChords, playView, prefersFlats, tokenizeLine, transposeKey, transposeText } from "../chords";
 import { ConfirmDialog } from "./Dialog";
 import { sectionTitle } from "../sectionTitle";
 import { MetronomeControl } from "./MetronomeControl";
@@ -39,6 +39,25 @@ export function SongSheet({ song, library }: Props) {
     }
   });
 
+  const [playCapo, setPlayCapo] = useState(() => {
+    try {
+      return localStorage.getItem("bestele:play-capo") !== "0";
+    } catch {
+      return true;
+    }
+  });
+
+  function togglePlayCapo() {
+    setPlayCapo((v) => {
+      try {
+        localStorage.setItem("bestele:play-capo", v ? "0" : "1");
+      } catch {
+        /* tercih kaydedilemezse sorun değil */
+      }
+      return !v;
+    });
+  }
+
   function toggleShapes() {
     setShowShapes((v) => {
       try {
@@ -53,6 +72,11 @@ export function SongSheet({ song, library }: Props) {
   const key = song.musicalKey;
   const targetKey = key ? transposeKey(key, transpose) : "";
   const flats = targetKey ? prefersFlats(targetKey) : false;
+  const capo = song.capo ?? 0;
+  const capoOn = capo > 0 && playCapo;
+  // Oku / sahne / şemalarda gösterilen akorlar (capo açıksa çalınan şekiller)
+  const view = capoOn ? playView(key, transpose, capo) : { semis: transpose, key: targetKey, flats };
+  const capoLabel = capo > 0 ? (capoOn && view.key ? `Capo ${capo} · ${view.key} şekli` : `Capo ${capo}`) : "";
 
   const used = useMemo(() => chordsIn(s.sections.map((x) => x.content).join("\n")), [s.sections]);
   const diatonic = useMemo(() => diatonicChords(key || "C"), [key]);
@@ -172,6 +196,16 @@ export function SongSheet({ song, library }: Props) {
             <button className={`chip ${showShapes ? "on" : ""}`} onClick={toggleShapes} aria-pressed={showShapes}>
               Akor şemaları
             </button>
+            {capo > 0 && (
+              <button
+                className={`chip ${capoOn ? "on" : ""}`}
+                onClick={togglePlayCapo}
+                aria-pressed={capoOn}
+                title="Açıkken akorlar capo'ya göre çalınan şekilleriyle gösterilir; ses değişmez"
+              >
+                Capo {capo} ile çal
+              </button>
+            )}
             <span className="toolbar-spacer" />
             <div className="export-group">
               <button className="btn btn-primary" onClick={() => setStage(true)} title="Tam ekran, büyük yazı, otomatik kaydırma">
@@ -204,9 +238,9 @@ export function SongSheet({ song, library }: Props) {
         <StageMode
           song={song}
           sections={s.sections}
-          transpose={transpose}
-          flats={flats}
-          keyLabel={targetKey}
+          transpose={view.semis}
+          flats={view.flats}
+          keyLabel={[targetKey, capoLabel].filter(Boolean).join(" · ")}
           onClose={() => setStage(false)}
         />
       )}
@@ -341,19 +375,20 @@ export function SongSheet({ song, library }: Props) {
                 targetKey && `Ton: ${targetKey}`,
                 song.tempo && `${song.tempo} BPM`,
                 song.timeSignature,
+                capoLabel,
               ]
                 .filter(Boolean)
                 .join("  ·  ")}
             </p>
           </header>
-          {showShapes && <ChordStrip chords={chordsIn(transposeText(s.sections.map((x) => x.content).join("\n"), transpose, flats))} />}
+          {showShapes && <ChordStrip chords={chordsIn(transposeText(s.sections.map((x) => x.content).join("\n"), view.semis, view.flats))} />}
           {s.sections.every((sec) => !sec.content.trim()) && (
             <p className="hint">Bölümler henüz boş. "Yaz" görünümünde söz ve akor ekleyebilirsin.</p>
           )}
           {s.sections.filter((sec) => sec.content.trim()).map((sec) => (
             <section className={`sheet-section kind-${sec.kind}`} key={sec.id}>
               <h3 className="sheet-label">{sectionTitle(sec, s.sections)}</h3>
-              <SheetText text={transposeText(sec.content, transpose, flats)} />
+              <SheetText text={transposeText(sec.content, view.semis, view.flats)} />
             </section>
           ))}
         </div>

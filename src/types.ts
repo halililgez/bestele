@@ -8,6 +8,8 @@ export interface Song {
   musicalKey: string;
   tempo: number | null;
   timeSignature: string;
+  /** Gitarda capo perdesi (0 = capo yok). Ses değişmez, yalnızca çalınan akor şekilleri değişir. */
+  capo: number;
   status: SongStatus;
   notes: string;
   folderId: string | null;
@@ -129,6 +131,14 @@ export const STATUS_ORDER: SongStatus[] = ["fikir", "taslak", "demo", "tamam"];
 const NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
 export const MUSICAL_KEYS: string[] = [...NOTES, ...NOTES.map((n) => n + "m")];
 
+export const MAX_CAPO = 9;
+
+/** Eski kayıtlarda/yedeklerde olmayan ya da bozuk capo değerini 0-9 aralığına çeker. */
+export function normalizeCapo(v: unknown): number {
+  const n = typeof v === "number" ? Math.round(v) : parseInt(String(v ?? ""), 10);
+  return Number.isFinite(n) ? Math.max(0, Math.min(MAX_CAPO, n)) : 0;
+}
+
 export const TIME_SIGNATURES = ["4/4", "3/4", "2/4", "6/8", "5/8", "7/8", "9/8", "12/8"];
 
 export function emptySong(title: string): SongFields {
@@ -138,6 +148,7 @@ export function emptySong(title: string): SongFields {
     musicalKey: "",
     tempo: null,
     timeSignature: "4/4",
+    capo: 0,
     status: "fikir",
     notes: "",
     folderId: null,
