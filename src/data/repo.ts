@@ -56,6 +56,9 @@ export interface Repo {
 
   /** Yedekten gelen kayıtları ekler; aynı kimlikle zaten var olanlar atlanır. Eklenen şarkı sayısını döner. */
   importRecords(data: BackupRecords): Promise<number>;
+
+  /** Arama için her şarkının bütün bölüm metinleri (şarkı kimliği → metin). */
+  lyricsIndex(): Promise<Record<string, string>>;
 }
 
 export function newId(): string {

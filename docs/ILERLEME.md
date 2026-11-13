@@ -18,6 +18,7 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 | 2 | Kayıtlar: mikrofon, dosya yükleme, oynatıcı | ✅ PR merge edildi |
 | 3 | Gelişim: versiyonlar, zaman çizelgesi, karşılaştırma | ✅ PR merge edildi |
 | 4 | Cila: dışa aktarma ve yazdırma, yedek, ikon, kısayollar | ✅ PR merge edildi |
+| 5 | Prova araçları: metronom + tap tempo, sahne modu, sözlerde arama | ✅ PR merge edildi |
 
 ## Günlük
 
@@ -27,12 +28,12 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 - **2026-11-13 ~03:50:** Faz 3 bitti: `versions` tablosu (migration 4, snapshot JSON), `src/diff.ts` (+ testler), `src/versioning.ts` (useVersions, snapshot yardımcıları), `DevelopmentPanel` (aşama yolculuğu, zaman çizelgesi: versiyon + kayıt + başlangıç, versiyon kaydet diyaloğu, görüntüle, öncekiyle/şimdikiyle karşılaştır, geri dön (önce otomatik yedek), versiyona kayıt bağlama, mini oynatıcı). `replaceSections` aynı sıradaki bölümleri yerinde günceller (kayıt bağlantıları korunur). Sıradaki: Faz 4 (cila).
 - **2026-11-13 ~04:10:** Faz 4 bitti: `src/exporting.ts` (düz metin akor-üstte, ChordPro, dosya indirme; + testler), Oku görünümünde Yazdır / Metni kopyala / .txt / ChordPro, yazdırma CSS'i, `src/backup.ts` + `BackupControls` (bütün defter + ses dosyaları tek JSON; geri yükleme mevcutları ezmez, `importRecords`), kısayollar (Ctrl+N/F/1-4/E/P, Esc), uygulama ikonu (`src-tauri/icons/source.svg` → `npx tauri icon`), README. Toplam 24 birim testi.
 
+- **2026-11-13 ~04:30:** Masaüstü veritabanı salt okunur incelendi: `user_version = 4`, 5 tablo mevcut (migration'lar gerçek uygulamada çalışıyor). Faz 5 bitti: `src/metronome.ts` (lookahead zamanlayıcı, `bpmFromTaps`, `beatsPerBar`; + testler), `MetronomeControl` (Beste sayfasında; tempo şarkıya kaydedilir), `StageMode` (tam ekran, otomatik kaydırma, klavye), `lyricsIndex` + sözlerde arama, `searchFold` (Türkçe karakter duyarsız arama; + testler). Toplam 31 birim testi.
+
 ## Sonraki fikirler (henüz yapılmadı)
 
-- Masaüstünde elle doğrulama: SQLite migration'ları, mikrofon kaydı, dosya indirme (yedek / .txt) WebView2'de.
-- Kütüphane aramasında sözlerin içinde de arama (şu an ad, yazan, not, ton, etiket).
+- Masaüstünde elle doğrulama: mikrofon kaydı, dosya indirme (yedek / .txt) ve yazdırma WebView2'de; SQLite'ta ekleme/düzenleme akışları.
 - Kayıt dalga formu görüntüsü, kayıtları kırpma.
-- Metronom / tempo vuruşu (tap tempo).
 - Akor diyagramları (gitar/piyano parmak pozisyonları).
-- Sahne modu: büyük yazı + otomatik kaydırma.
+- Kayıt dinlerken eşzamanlı söz takibi.
 - Mobil sürüm (Tauri 2 iOS/Android).

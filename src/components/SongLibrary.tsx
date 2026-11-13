@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getRepo } from "../data/repo";
 import type { Library } from "../useLibrary";
 import { STATUS_LABELS, STATUS_ORDER, type Song, type SongStatus } from "../types";
-import { relativeTime, trLower } from "../util";
+import { relativeTime, searchFold } from "../util";
 import type { LibraryFilter } from "./Sidebar";
 
 type Sort = "updated" | "created" | "title";
@@ -48,19 +49,41 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
     [library.songs, filter],
   );
 
-  const visible = useMemo(() => {
-    const q = trLower(query.trim());
+  // Sözlerde arama: arama kutusu doluyken bölüm metinleri bir kez yüklenir
+  const searching = query.trim() !== "";
+  const [lyrics, setLyrics] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!searching) return;
+    let cancelled = false;
+    getRepo()
+      .then((r) => r.lyricsIndex())
+      .then((index) => !cancelled && setLyrics(index))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [searching, library.songs]);
+
+  const { visible, snippets } = useMemo(() => {
+    const q = searchFold(query.trim());
+    const snippets = new Map<string, string>();
     const list = inScope.filter((s) => {
       if (status && s.status !== status) return false;
       if (!q) return true;
-      return [s.title, s.writer, s.notes, s.musicalKey, ...s.tags].some((v) => trLower(v).includes(q));
+      if ([s.title, s.writer, s.notes, s.musicalKey, ...s.tags].some((v) => searchFold(v).includes(q))) return true;
+      const line = (lyrics[s.id] ?? "")
+        .split("\n")
+        .map((l) => l.replace(/\[[^\]]*\]/g, "").trim())
+        .find((l) => searchFold(l).includes(q));
+      if (line) snippets.set(s.id, line.length > 70 ? line.slice(0, 70) + "…" : line);
+      return Boolean(line);
     });
     const sorted = [...list];
     if (sort === "title") sorted.sort((a, b) => a.title.localeCompare(b.title, "tr"));
     else if (sort === "created") sorted.sort((a, b) => b.createdAt - a.createdAt);
     else sorted.sort((a, b) => b.updatedAt - a.updatedAt);
-    return sorted;
-  }, [inScope, query, status, sort]);
+    return { visible: sorted, snippets };
+  }, [inScope, query, status, sort, lyrics]);
 
   const nothingYet = library.songs.length === 0;
 
@@ -118,7 +141,13 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
           ) : (
             <div className="song-grid">
               {visible.map((s) => (
-                <SongCard key={s.id} song={s} folderName={library.folders.find((f) => f.id === s.folderId)?.name} onOpen={onOpen} />
+                <SongCard
+                  key={s.id}
+                  song={s}
+                  folderName={library.folders.find((f) => f.id === s.folderId)?.name}
+                  snippet={snippets.get(s.id)}
+                  onOpen={onOpen}
+                />
               ))}
             </div>
           )}
@@ -128,11 +157,22 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
   );
 }
 
-function SongCard({ song, folderName, onOpen }: { song: Song; folderName?: string; onOpen: (id: string) => void }) {
+function SongCard({
+  song,
+  folderName,
+  snippet,
+  onOpen,
+}: {
+  song: Song;
+  folderName?: string;
+  snippet?: string;
+  onOpen: (id: string) => void;
+}) {
   return (
     <button className="song-card" onClick={() => onOpen(song.id)}>
       <h3 className="title">{song.title || "Adsız şarkı"}</h3>
       {song.writer && <div className="writer">{song.writer}</div>}
+      {snippet && <div className="snippet">“{snippet}”</div>}
       <div className="meta">
         {song.musicalKey && <span className="pill">{song.musicalKey}</span>}
         {song.tempo && <span className="pill">{song.tempo} BPM</span>}
