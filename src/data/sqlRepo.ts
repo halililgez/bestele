@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { Folder, Recording, Section, SectionKind, Song, SongFields, SongStatus } from "../types";
+import type { Folder, Recording, Section, SectionKind, Song, SongFields, SongStatus, Version } from "../types";
 import { newId, type Repo } from "./repo";
 
 interface SongRow {
@@ -71,7 +71,51 @@ const MIGRATIONS: string[] = [
      created_at INTEGER NOT NULL
    );
    CREATE INDEX IF NOT EXISTS idx_recordings_song ON recordings(song_id, created_at);`,
+  // 4: Versiyonlar (şarkının anlık görüntüleri)
+  `CREATE TABLE IF NOT EXISTS versions (
+     id TEXT PRIMARY KEY,
+     song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
+     name TEXT NOT NULL DEFAULT '',
+     note TEXT NOT NULL DEFAULT '',
+     stage TEXT NOT NULL DEFAULT 'fikir',
+     snapshot TEXT NOT NULL,
+     recording_ids TEXT NOT NULL DEFAULT '[]',
+     created_at INTEGER NOT NULL
+   );
+   CREATE INDEX IF NOT EXISTS idx_versions_song ON versions(song_id, created_at);`,
 ];
+
+interface VersionRow {
+  id: string;
+  song_id: string;
+  name: string;
+  note: string;
+  stage: string;
+  snapshot: string;
+  recording_ids: string;
+  created_at: number;
+}
+
+function parseJson<T>(raw: string, fallback: T): T {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function toVersion(r: VersionRow): Version {
+  return {
+    id: r.id,
+    songId: r.song_id,
+    name: r.name,
+    note: r.note,
+    stage: r.stage as SongStatus,
+    snapshot: parseJson(r.snapshot, { title: "", musicalKey: "", tempo: null, timeSignature: "4/4", sections: [] }),
+    recordingIds: parseJson<string[]>(r.recording_ids, []),
+    createdAt: r.created_at,
+  };
+}
 
 interface RecordingRow {
   id: string;
@@ -220,6 +264,7 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async deleteSong(id) {
+      await db.execute("DELETE FROM versions WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM recordings WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM sections WHERE song_id = $1", [id]);
       await db.execute("DELETE FROM songs WHERE id = $1", [id]);
@@ -338,7 +383,79 @@ export async function createSqlRepo(): Promise<Repo> {
     async deleteRecording(id) {
       await db.execute("DELETE FROM recordings WHERE id = $1", [id]);
     },
+
+    async listVersions(songId) {
+      const rows = await db.select<VersionRow[]>("SELECT * FROM versions WHERE song_id = $1 ORDER BY created_at DESC", [songId]);
+      return rows.map(toVersion);
+    },
+
+    async createVersion(f) {
+      const id = newId();
+      const now = Date.now();
+      await db.execute(
+        `INSERT INTO versions (id, song_id, name, note, stage, snapshot, recording_ids, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [id, f.songId, f.name, f.note, f.stage, JSON.stringify(f.snapshot), JSON.stringify(f.recordingIds), now],
+      );
+      await touchSong(f.songId, now);
+      return getVersion(id);
+    },
+
+    async updateVersion(id, patch) {
+      const sets: string[] = [];
+      const values: unknown[] = [];
+      const add = (col: string, v: unknown) => {
+        values.push(v);
+        sets.push(`${col} = $${values.length}`);
+      };
+      if (patch.name !== undefined) add("name", patch.name);
+      if (patch.note !== undefined) add("note", patch.note);
+      if (patch.stage !== undefined) add("stage", patch.stage);
+      if (patch.recordingIds !== undefined) add("recording_ids", JSON.stringify(patch.recordingIds));
+      if (sets.length) {
+        values.push(id);
+        await db.execute(`UPDATE versions SET ${sets.join(", ")} WHERE id = $${values.length}`, values);
+      }
+      return getVersion(id);
+    },
+
+    async deleteVersion(id) {
+      await db.execute("DELETE FROM versions WHERE id = $1", [id]);
+    },
+
+    async replaceSections(songId, sections) {
+      // Aynı sıradaki bölümler yerinde güncellenir ki kayıtların bölüm bağlantıları korunsun
+      const old = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
+      const now = Date.now();
+      for (let i = 0; i < sections.length; i++) {
+        const s = sections[i];
+        if (old[i]) {
+          await db.execute(
+            "UPDATE sections SET kind = $1, label = $2, content = $3, position = $4, updated_at = $5 WHERE id = $6",
+            [s.kind, s.label, s.content, i, now, old[i].id],
+          );
+        } else {
+          await db.execute(
+            "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [newId(), songId, s.kind, s.label, s.content, i, now, now],
+          );
+        }
+      }
+      for (const s of old.slice(sections.length)) {
+        await db.execute("UPDATE recordings SET section_id = NULL WHERE section_id = $1", [s.id]);
+        await db.execute("DELETE FROM sections WHERE id = $1", [s.id]);
+      }
+      await touchSong(songId, now);
+      const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
+      return rows.map(toSection);
+    },
   };
+
+  async function getVersion(id: string): Promise<Version> {
+    const rows = await db.select<VersionRow[]>("SELECT * FROM versions WHERE id = $1", [id]);
+    if (!rows[0]) throw new Error("Versiyon bulunamadı");
+    return toVersion(rows[0]);
+  }
 
   async function getRecording(id: string): Promise<Recording> {
     const rows = await db.select<RecordingRow[]>("SELECT * FROM recordings WHERE id = $1", [id]);
