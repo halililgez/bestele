@@ -1,24 +1,17 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { downloadFile, safeFileName, songToChordPro, songToText } from "../exporting";
 import type { Library } from "../useLibrary";
 import { useSections } from "../useSections";
 import { SECTION_LABELS, SECTION_ORDER, type Section, type SectionKind, type Song } from "../types";
 import { chordsIn, diatonicChords, prefersFlats, tokenizeLine, transposeKey, transposeText } from "../chords";
 import { ConfirmDialog } from "./Dialog";
+import { sectionTitle } from "../sectionTitle";
 
 type Mode = "yaz" | "oku";
 
 const QUICK_KINDS: SectionKind[] = ["kita", "nakarat", "onnakarat", "kopru", "giris", "solo", "final"];
 const TEMPLATE: SectionKind[] = ["kita", "nakarat", "kita", "nakarat", "kopru", "nakarat"];
 
-/** Etiketi boş bölümlere "Kıta 1, Kıta 2" gibi ad üretir. */
-export function sectionTitle(section: Section, all: Section[]): string {
-  if (section.label.trim()) return section.label.trim();
-  const base = SECTION_LABELS[section.kind];
-  if (section.kind !== "kita" && section.kind !== "diger") return base;
-  const same = all.filter((s) => s.kind === section.kind && !s.label.trim());
-  if (same.length < 2) return base;
-  return `${base} ${same.findIndex((s) => s.id === section.id) + 1}`;
-}
 
 interface Props {
   song: Song;
@@ -33,6 +26,7 @@ export function SongSheet({ song, library }: Props) {
   const [deleting, setDeleting] = useState<Section | null>(null);
   const active = useRef<{ id: string; el: HTMLTextAreaElement } | null>(null);
   const [customChord, setCustomChord] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const key = song.musicalKey;
   const targetKey = key ? transposeKey(key, transpose) : "";
@@ -66,6 +60,40 @@ export function SongSheet({ song, library }: Props) {
 
   async function addTemplate() {
     for (const kind of TEMPLATE) await s.add(kind);
+  }
+
+  // Ctrl+E: Yaz/Oku, Ctrl+P: Oku görünümüne geçip yazdır
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay")) return;
+      const k = e.key.toLowerCase();
+      if (k === "e") {
+        e.preventDefault();
+        setMode((m) => (m === "yaz" ? "oku" : "yaz"));
+      } else if (k === "p") {
+        e.preventDefault();
+        setMode("oku");
+        window.setTimeout(() => window.print(), 80);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function exportAs(kind: "txt" | "cho") {
+    const name = safeFileName(song.title);
+    if (kind === "txt") downloadFile(`${name}.txt`, songToText(song, s.sections, sectionTitle), "text/plain;charset=utf-8");
+    else downloadFile(`${name}.cho`, songToChordPro(song, s.sections, sectionTitle), "text/plain;charset=utf-8");
+  }
+
+  async function copyText() {
+    try {
+      await navigator.clipboard.writeText(songToText(song, s.sections, sectionTitle));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* pano erişimi yoksa sessizce geç */
+    }
   }
 
   if (!s.loaded) return null;
@@ -117,6 +145,21 @@ export function SongSheet({ song, library }: Props) {
               </button>
               <button className="icon-btn" aria-label="Yazıyı büyüt" onClick={() => setScale((v) => Math.min(2, v + 0.1))}>
                 A+
+              </button>
+            </div>
+            <span className="toolbar-spacer" />
+            <div className="export-group">
+              <button className="btn" onClick={() => window.print()} title="Ctrl + P">
+                Yazdır
+              </button>
+              <button className="btn" onClick={copyText} title="Akorları sözlerin üstünde, düz metin olarak kopyalar">
+                {copied ? "Kopyalandı ✓" : "Metni kopyala"}
+              </button>
+              <button className="btn" onClick={() => exportAs("txt")} title="Düz metin dosyası (.txt)">
+                .txt
+              </button>
+              <button className="btn" onClick={() => exportAs("cho")} title="ChordPro dosyası: akor uygulamalarının çoğu açabilir">
+                ChordPro
               </button>
             </div>
           </>
@@ -245,6 +288,19 @@ export function SongSheet({ song, library }: Props) {
         </>
       ) : (
         <div className="sheet" style={{ fontSize: `${scale}em` }}>
+          <header className="print-head">
+            <h1>{song.title || "Adsız şarkı"}</h1>
+            <p>
+              {[
+                song.writer,
+                targetKey && `Ton: ${targetKey}`,
+                song.tempo && `${song.tempo} BPM`,
+                song.timeSignature,
+              ]
+                .filter(Boolean)
+                .join("  ·  ")}
+            </p>
+          </header>
           {s.sections.every((sec) => !sec.content.trim()) && (
             <p className="hint">Bölümler henüz boş. "Yaz" görünümünde söz ve akor ekleyebilirsin.</p>
           )}

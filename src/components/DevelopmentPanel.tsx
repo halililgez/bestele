@@ -6,7 +6,8 @@ import { formatDuration, useRecordings } from "../useRecordings";
 import { makeSnapshot, snapshotSections, snapshotText, useVersions } from "../versioning";
 import { diffLines, diffStats, type DiffLine } from "../diff";
 import { relativeTime } from "../util";
-import { sectionTitle, SheetText } from "./SongSheet";
+import { SheetText } from "./SongSheet";
+import { sectionTitle } from "../sectionTitle";
 import { ConfirmDialog, Dialog } from "./Dialog";
 
 interface Props {

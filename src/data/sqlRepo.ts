@@ -449,6 +449,46 @@ export async function createSqlRepo(): Promise<Repo> {
       const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
       return rows.map(toSection);
     },
+
+    async importRecords(data) {
+      const ins = async (sql: string, values: unknown[]) => {
+        const r = await db.execute(sql, values);
+        return r.rowsAffected;
+      };
+      for (const f of data.folders) {
+        await ins("INSERT OR IGNORE INTO folders (id, name, created_at) VALUES ($1, $2, $3)", [f.id, f.name, f.createdAt]);
+      }
+      let added = 0;
+      for (const s of data.songs) {
+        added += await ins(
+          `INSERT OR IGNORE INTO songs (id, title, writer, musical_key, tempo, time_signature, status, notes, folder_id, tags, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [s.id, s.title, s.writer, s.musicalKey, s.tempo, s.timeSignature, s.status, s.notes, s.folderId, JSON.stringify(s.tags), s.createdAt, s.updatedAt],
+        );
+      }
+      for (const s of data.sections) {
+        await ins(
+          `INSERT OR IGNORE INTO sections (id, song_id, kind, label, content, position, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [s.id, s.songId, s.kind, s.label, s.content, s.position, s.createdAt, s.updatedAt],
+        );
+      }
+      for (const r of data.recordings) {
+        await ins(
+          `INSERT OR IGNORE INTO recordings (id, song_id, section_id, title, note, file_name, mime_type, duration_ms, size_bytes, source, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [r.id, r.songId, r.sectionId, r.title, r.note, r.fileName, r.mimeType, r.durationMs, r.sizeBytes, r.source, r.createdAt],
+        );
+      }
+      for (const v of data.versions) {
+        await ins(
+          `INSERT OR IGNORE INTO versions (id, song_id, name, note, stage, snapshot, recording_ids, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [v.id, v.songId, v.name, v.note, v.stage, JSON.stringify(v.snapshot), JSON.stringify(v.recordingIds), v.createdAt],
+        );
+      }
+      return added;
+    },
   };
 
   async function getVersion(id: string): Promise<Version> {
