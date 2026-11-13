@@ -38,29 +38,65 @@
   --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
   --font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
 
-  --desk: #101114;
-  --paper: #17181c;
-  --paper-2: #1e2025;
-  --ink: #ececef;
-  --ink-soft: #a0a3ad;
-  --ink-faint: #6b6e78;
+  /* Defter'in sıcak tonlarının sade, pastel hâli: göz yormayan açık zemin,
+     yumuşak kil vurgu. Metin olarak da kullanılan renkler okunur kalır. */
+  --desk: #efeae2;
+  --paper: #faf8f4;
+  --paper-2: #f3efe8;
+  --ink: #3a3631;
+  --ink-soft: #7a7268;
+  --ink-faint: #a69e93;
   --rule: transparent;
   --margin-line: transparent;
-  --accent: #e8a33d;
-  --accent-ink: #1a1407;
-  --accent-soft: rgba(232, 163, 61, 0.14);
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --sidebar-bg: #0c0d10;
-  --input-bg: #121317;
+  --accent: #a05a47;
+  --accent-ink: #fffaf5;
+  --accent-soft: rgba(214, 150, 128, 0.18);
+  --border: rgba(80, 64, 48, 0.12);
+  --shadow: 0 1px 2px rgba(80, 60, 40, 0.06), 0 4px 14px rgba(80, 60, 40, 0.06);
+  --sidebar-bg: #ebe5db;
+  --input-bg: #fffdf9;
   --title-font: var(--font-ui);
   --title-size: 2rem;
   --card-title-size: 1.1rem;
 
-  --st-fikir: #8f939e;
-  --st-taslak: #e0a33f;
-  --st-demo: #5b9be6;
-  --st-tamam: #5cbf73;
+  --st-fikir: #948a7c;
+  --st-taslak: #b08442;
+  --st-demo: #5f86b0;
+  --st-tamam: #63946a;
+
+  --radius: 10px;
+  color-scheme: light;
+}
+
+/* Gece: Modern'in ışığı kısılmış hâli. Saf siyah ve parlak beyaz yok;
+   sıcak koyu zemin, kırık beyaz yazı, aynı kil vurgunun açık tonu. */
+:root[data-theme="gece"] {
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --desk: #1a1715;
+  --paper: #221f1c;
+  --paper-2: #2b2724;
+  --ink: #e6dfd4;
+  --ink-soft: #b0a697;
+  --ink-faint: #7d7468;
+  --rule: transparent;
+  --margin-line: transparent;
+  --accent: #d49c87;
+  --accent-ink: #2a1a14;
+  --accent-soft: rgba(212, 156, 135, 0.16);
+  --border: rgba(230, 215, 195, 0.1);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.2);
+  --sidebar-bg: #171412;
+  --input-bg: #1d1a18;
+  --title-font: var(--font-ui);
+  --title-size: 2rem;
+  --card-title-size: 1.1rem;
+
+  --st-fikir: #a3998b;
+  --st-taslak: #d6ad6a;
+  --st-demo: #8fb0d6;
+  --st-tamam: #8fbf93;
 
   --radius: 10px;
   color-scheme: dark;
@@ -138,7 +174,7 @@ button {
   background: var(--margin-line);
 }
 
-:root[data-theme="modern"] .paper {
+:root:is([data-theme="modern"], [data-theme="gece"]) .paper {
   padding: 32px 40px 64px;
 }
 
@@ -166,7 +202,7 @@ button {
   margin: 0;
 }
 
-:root[data-theme="modern"] .brand {
+:root:is([data-theme="modern"], [data-theme="gece"]) .brand {
   font-family: var(--font-ui);
   font-size: 1.4rem;
   font-weight: 700;
@@ -390,7 +426,7 @@ button {
   margin: 0;
 }
 
-:root[data-theme="modern"] .page-title {
+:root:is([data-theme="modern"], [data-theme="gece"]) .page-title {
   letter-spacing: -0.02em;
 }
 
@@ -496,7 +532,7 @@ button {
   font-style: italic;
 }
 
-:root[data-theme="modern"] .song-card .writer {
+:root:is([data-theme="modern"], [data-theme="gece"]) .song-card .writer {
   font-style: normal;
 }
 
@@ -631,7 +667,7 @@ button {
   margin-bottom: 16px;
 }
 
-:root[data-theme="modern"] .writer-input {
+:root:is([data-theme="modern"], [data-theme="gece"]) .writer-input {
   font-style: normal;
 }
 

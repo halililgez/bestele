@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 
-export type Theme = "defter" | "modern";
+export type Theme = "defter" | "modern" | "gece";
 
 export const THEME_LABELS: Record<Theme, string> = {
   defter: "Defter",
   modern: "Modern",
+  gece: "Gece",
 };
 
 const KEY = "bestele:theme";
@@ -12,7 +13,7 @@ const KEY = "bestele:theme";
 function initialTheme(): Theme {
   try {
     const saved = localStorage.getItem(KEY);
-    if (saved === "defter" || saved === "modern") return saved;
+    if (saved === "defter" || saved === "modern" || saved === "gece") return saved;
   } catch {
     /* varsayılana düş */
   }
