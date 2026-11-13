@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { Library } from "../useLibrary";
 import { buildBackup, restoreBackup } from "../backup";
-import { downloadFile } from "../exporting";
+import { saveFile } from "../exporting";
 import { Dialog } from "./Dialog";
 import { useT } from "../i18n";
 
@@ -18,11 +18,12 @@ export function BackupControls({ library }: { library: Library }) {
       const backup = await buildBackup();
       const stamp = new Date().toISOString().slice(0, 10);
       const fileName = t.backup.fileName(stamp);
-      downloadFile(fileName, JSON.stringify(backup), "application/json");
+      const saved = await saveFile(fileName, JSON.stringify(backup), t.common.filterBackup);
+      if (!saved.saved) return; // kullanıcı kaydetme penceresinde vazgeçti
       const audioCount = Object.keys(backup.audio).length;
       setResult({
         title: t.backup.readyTitle,
-        body: t.backup.readyBody(backup.songs.length, backup.versions.length, audioCount, fileName),
+        body: t.backup.readyBody(backup.songs.length, backup.versions.length, audioCount, saved.where, saved.inDownloads),
       });
     } catch (e) {
       setResult({ title: t.backup.exportFailed, body: String(e) });

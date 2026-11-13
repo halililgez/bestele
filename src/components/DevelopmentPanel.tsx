@@ -36,6 +36,7 @@ export function DevelopmentPanel({ song, library }: Props) {
   const [restoring, setRestoring] = useState<Version | null>(null);
   const [deleting, setDeleting] = useState<Version | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const recById = useMemo(() => new Map(rec.recordings.map((r) => [r.id, r])), [rec.recordings]);
 
@@ -83,19 +84,36 @@ export function DevelopmentPanel({ song, library }: Props) {
   }
 
   async function restore(version: Version) {
-    await v.create(song, {
+    setRestoreError(null);
+    // Şu anki hâl yedeklenemezse geri dönme: yoksa o hâl tamamen kaybolur
+    const backup = await v.create(song, {
       name: t.development.beforeRestoreName(version.name),
       note: t.development.beforeRestoreNote,
       stage: song.status,
       recordingIds: [],
     });
-    const repo = await getRepo();
-    await repo.replaceSections(song.id, version.snapshot.sections);
-    await library.updateSong(song.id, {
-      musicalKey: version.snapshot.musicalKey,
-      tempo: version.snapshot.tempo,
-      timeSignature: version.snapshot.timeSignature,
-    });
+    if (!backup) {
+      v.clearError();
+      setRestoreError(t.development.restoreAborted);
+      return;
+    }
+    try {
+      const repo = await getRepo();
+      await repo.replaceSections(song.id, version.snapshot.sections);
+      const snap = version.snapshot;
+      const restored = await library.updateSong(song.id, {
+        musicalKey: snap.musicalKey,
+        tempo: snap.tempo,
+        timeSignature: snap.timeSignature,
+        // Capo'dan önceki versiyonlarda capo bilgisi yok; o zaman şimdiki capo korunur
+        ...(snap.capo !== undefined ? { capo: snap.capo } : {}),
+      });
+      // Şarkı bilgileri yazılamadıysa hata zaten genel bildirimde gösteriliyor
+      if (!restored) return;
+    } catch (e) {
+      setRestoreError(t.development.restoreFailed(e instanceof Error ? e.message : String(e)));
+      return;
+    }
     setCompare(null);
     setNotice(t.development.restored(version.name));
   }
@@ -221,7 +239,14 @@ export function DevelopmentPanel({ song, library }: Props) {
         />
       )}
 
-      {(v.error || rec.error) && (
+      {restoreError ? (
+        <div className="toast" role="alert">
+          <span>{restoreError}</span>
+          <button onClick={() => setRestoreError(null)} aria-label={t.common.close}>
+            ×
+          </button>
+        </div>
+      ) : (v.error || rec.error) && (
         <div className="toast" role="alert">
           <span>{t.common.problem(v.error || rec.error || "")}</span>
           <button

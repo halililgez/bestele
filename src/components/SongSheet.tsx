@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { downloadFile, safeFileName, songToChordPro, songToText } from "../exporting";
+import { saveFile, safeFileName, songToChordPro, songToText } from "../exporting";
 import type { Library } from "../useLibrary";
 import { useSections } from "../useSections";
 import { SECTION_ORDER, type Section, type SectionKind, type Song } from "../types";
@@ -34,6 +34,7 @@ export function SongSheet({ song, library }: Props) {
   const active = useRef<{ id: string; el: HTMLTextAreaElement } | null>(null);
   const areas = useRef(new Map<string, HTMLTextAreaElement>());
   const [copied, setCopied] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [stage, setStage] = useState(false);
   const [showShapes, setShowShapes] = useState(() => {
     try {
@@ -141,10 +142,14 @@ export function SongSheet({ song, library }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  function exportAs(kind: "txt" | "cho") {
+  async function exportAs(kind: "txt" | "cho") {
     const name = safeFileName(song.title);
-    if (kind === "txt") downloadFile(`${name}.txt`, songToText(song, s.sections, sectionTitle), "text/plain;charset=utf-8");
-    else downloadFile(`${name}.cho`, songToChordPro(song, s.sections, sectionTitle), "text/plain;charset=utf-8");
+    try {
+      if (kind === "txt") await saveFile(`${name}.txt`, songToText(song, s.sections, sectionTitle), t.common.filterText);
+      else await saveFile(`${name}.cho`, songToChordPro(song, s.sections, sectionTitle), "ChordPro");
+    } catch (e) {
+      setExportError(t.common.saveFailed(e instanceof Error ? e.message : String(e)));
+    }
   }
 
   async function copyText() {
@@ -412,6 +417,15 @@ export function SongSheet({ song, library }: Props) {
           onConfirm={() => s.remove(deleting.id)}
           onClose={() => setDeleting(null)}
         />
+      )}
+
+      {exportError && (
+        <div className="toast" role="alert">
+          <span>{exportError}</span>
+          <button onClick={() => setExportError(null)} aria-label={t.common.close}>
+            ×
+          </button>
+        </div>
       )}
 
       {s.error && (

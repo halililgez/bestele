@@ -5,6 +5,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 export const en: Messages = {
   common: {
     cancel: "Cancel",
+    saveFailed: (e) => `The file could not be saved: ${e}`,
+    filterText: "Text file",
+    filterBackup: "Bestele backup",
     ok: "OK",
     save: "Save",
     delete: "Delete",
@@ -91,8 +94,8 @@ export const en: Messages = {
     import: "Restore backup",
     fileName: (date) => `bestele-backup-${date}.json`,
     readyTitle: "Backup ready",
-    readyBody: (songs, versions, audio, file) =>
-      `${plural(songs, "song", "songs")}, ${plural(versions, "version", "versions")} and ${plural(audio, "audio file", "audio files")} were saved to “${file}” (Downloads folder). Keep this file somewhere safe.`,
+    readyBody: (songs, versions, audio, file, inDownloads) =>
+      `${plural(songs, "song", "songs")}, ${plural(versions, "version", "versions")} and ${plural(audio, "audio file", "audio files")} were saved to “${file}”${inDownloads ? " (Downloads folder)" : ""}. Keep this file somewhere safe.`,
     exportFailed: "Backup failed",
     importedTitle: "Backup restored",
     importedAll: (n) => `${plural(n, "song was", "songs were")} added to the notebook.`,
@@ -300,10 +303,12 @@ export const en: Messages = {
     beforeRestoreName: (name) => `Before returning to “${name}”`,
     beforeRestoreNote: "Saved automatically before restoring.",
     restored: (name) => `The song was restored to “${name}”. Its previous state was also saved as a version.`,
+    restoreAborted: "Not restored: the current state could not be backed up, so the song was left untouched.",
+    restoreFailed: (e) => `Restoring could not be completed: ${e}`,
     restoreTitle: "Return to this version",
     restoreBody: (name) =>
       [
-        "Lyrics, chords, key, tempo and time signature will be restored to version ",
+        "Lyrics, chords, key, tempo, time signature and capo will be restored to version ",
         name,
         ". The current state isn't lost: it is first saved automatically as a new version.",
       ] as Rich,

@@ -41,12 +41,16 @@ export function Recorder({ onRecorded }: Props) {
     setLevel(0);
   }
 
+  // Kayıt sürerken bileşen kapanırsa (sekme değişti, şarkıdan çıkıldı) kaydı atma:
+  // kaydediciyi durdur, onstop kaydı her zamanki gibi teslim edip mikrofonu kapatır.
+  const alive = useRef(true);
   useEffect(() => () => {
+    alive.current = false;
     if (recorder.current && recorder.current.state !== "inactive") {
-      recorder.current.onstop = null;
       recorder.current.stop();
+    } else {
+      cleanup();
     }
-    cleanup();
   }, []);
 
   function currentMs() {
@@ -61,6 +65,11 @@ export function Recorder({ onRecorded }: Props) {
         // Müzik kaydı için tarayıcının konuşma filtrelerini kapat
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
+      if (!alive.current) {
+        // İzin beklenirken sayfadan çıkıldı: mikrofonu açık bırakma
+        s.getTracks().forEach((tr) => tr.stop());
+        return;
+      }
       stream.current = s;
 
       const ctx = new AudioContext();
