@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getRepo, type Repo } from "./data/repo";
 import { getAudioStore } from "./data/audioStore";
 import type { Folder, Song, SongFields } from "./types";
+import { compareText } from "./util";
 
 /** Şarkıları ve klasörleri yükleyip değişiklikleri depoya yazan merkezi durum. */
 export function useLibrary() {
@@ -80,7 +81,7 @@ export function useLibrary() {
     (name: string) =>
       guard(async (r) => {
         const folder = await r.createFolder(name);
-        setFolders((prev) => [...prev, folder].sort((a, b) => a.name.localeCompare(b.name, "tr")));
+        setFolders((prev) => [...prev, folder].sort((a, b) => compareText(a.name, b.name)));
         return folder;
       }),
     [guard],
@@ -91,7 +92,7 @@ export function useLibrary() {
       guard(async (r) => {
         await r.renameFolder(id, name);
         setFolders((prev) =>
-          prev.map((f) => (f.id === id ? { ...f, name } : f)).sort((a, b) => a.name.localeCompare(b.name, "tr")),
+          prev.map((f) => (f.id === id ? { ...f, name } : f)).sort((a, b) => compareText(a.name, b.name)),
         );
       }),
     [guard],

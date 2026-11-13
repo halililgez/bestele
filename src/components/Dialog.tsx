@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { useT } from "../i18n";
 
 interface Props {
   title: string;
@@ -34,12 +35,13 @@ interface ConfirmProps {
 }
 
 export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onClose }: ConfirmProps) {
+  const t = useT();
   return (
     <Dialog title={title} onClose={onClose}>
       <p>{message}</p>
       <div className="dialog-actions">
         <button className="btn" onClick={onClose}>
-          Vazgeç
+          {t.common.cancel}
         </button>
         <button
           className="btn btn-primary"

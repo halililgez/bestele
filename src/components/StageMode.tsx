@@ -3,6 +3,7 @@ import type { Section, Song } from "../types";
 import { sectionTitle } from "../sectionTitle";
 import { transposeText } from "../chords";
 import { SheetText } from "./SongSheet";
+import { useT } from "../i18n";
 
 interface Props {
   song: Song;
@@ -20,6 +21,7 @@ const MAX_SPEED = 10;
  * Boşluk: kaydırmayı başlat/durdur · ↑/↓: hız · +/−: yazı boyutu · Esc: çık
  */
 export function StageMode({ song, sections, transpose, flats, keyLabel, onClose }: Props) {
+  const t = useT();
   const box = useRef<HTMLDivElement>(null);
   const [speed, setSpeed] = useState(3);
   const [scrolling, setScrolling] = useState(false);
@@ -83,49 +85,49 @@ export function StageMode({ song, sections, transpose, flats, keyLabel, onClose 
   const visible = sections.filter((s) => s.content.trim());
 
   return (
-    <div className="stage" role="dialog" aria-modal="true" aria-label="Sahne modu">
+    <div className="stage" role="dialog" aria-modal="true" aria-label={t.stage.label}>
       <div className="stage-bar">
-        <strong>{song.title || "Adsız şarkı"}</strong>
+        <strong>{song.title || t.common.untitledSong}</strong>
         {keyLabel && <span>{keyLabel}</span>}
         {song.tempo && <span>{song.tempo} BPM</span>}
         <span className="stage-spacer" />
         <button className="stage-btn" onClick={() => setScrolling((v) => !v)}>
-          {scrolling ? "❚❚ Durdur" : "▶ Kaydır"}
+          {scrolling ? t.stage.pause : t.stage.scroll}
         </button>
         <span className="stage-speed">
-          <button className="stage-btn" aria-label="Yavaşlat" onClick={() => setSpeed((v) => Math.max(1, v - 1))}>
+          <button className="stage-btn" aria-label={t.stage.slower} onClick={() => setSpeed((v) => Math.max(1, v - 1))}>
             −
           </button>
-          Hız {speed}
-          <button className="stage-btn" aria-label="Hızlandır" onClick={() => setSpeed((v) => Math.min(MAX_SPEED, v + 1))}>
+          {t.stage.speed(speed)}
+          <button className="stage-btn" aria-label={t.stage.faster} onClick={() => setSpeed((v) => Math.min(MAX_SPEED, v + 1))}>
             +
           </button>
         </span>
         <span className="stage-speed">
-          <button className="stage-btn" aria-label="Yazıyı küçült" onClick={() => setSize((v) => Math.max(0.8, v - 0.1))}>
+          <button className="stage-btn" aria-label={t.common.fontSmaller} onClick={() => setSize((v) => Math.max(0.8, v - 0.1))}>
             A−
           </button>
-          <button className="stage-btn" aria-label="Yazıyı büyüt" onClick={() => setSize((v) => Math.min(3.5, v + 0.1))}>
+          <button className="stage-btn" aria-label={t.common.fontLarger} onClick={() => setSize((v) => Math.min(3.5, v + 0.1))}>
             A+
           </button>
         </span>
         <button className="stage-btn" onClick={onClose}>
-          Çık (Esc)
+          {t.stage.exit}
         </button>
       </div>
       <div className="stage-scroll" ref={box} onWheel={() => (pos.current = box.current?.scrollTop ?? 0)}>
         <div className="sheet stage-sheet" style={{ fontSize: `${size}em` }}>
-          {visible.length === 0 && <p>Bu şarkıda henüz söz ya da akor yok.</p>}
+          {visible.length === 0 && <p>{t.stage.empty}</p>}
           {visible.map((s) => (
             <section className={`sheet-section kind-${s.kind}`} key={s.id}>
               <h3 className="sheet-label">{sectionTitle(s, sections)}</h3>
               <SheetText text={transposeText(s.content, transpose, flats)} />
             </section>
           ))}
-          <div className="stage-end">— son —</div>
+          <div className="stage-end">{t.stage.end}</div>
         </div>
       </div>
-      <div className="stage-help">Boşluk: kaydır / durdur · ↑ ↓ hız · + − yazı · Esc çık</div>
+      <div className="stage-help">{t.stage.help}</div>
     </div>
   );
 }

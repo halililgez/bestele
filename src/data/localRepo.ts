@@ -1,5 +1,7 @@
 import { normalizeCapo, type Folder, type Recording, type Section, type Song, type Version } from "../types";
 import { newId, type Repo } from "./repo";
+import { t } from "../i18n";
+import { compareText } from "../util";
 
 /**
  * Tarayıcı önizlemesi için geçici depo (localStorage).
@@ -67,7 +69,7 @@ export function createLocalRepo(): Repo {
 
     async updateSong(id, patch) {
       const i = store.songs.findIndex((s) => s.id === id);
-      if (i < 0) throw new Error("Şarkı bulunamadı");
+      if (i < 0) throw new Error(t().errors.songNotFound);
       store.songs[i] = { ...store.songs[i], ...patch, updatedAt: Date.now() };
       save(store);
       return store.songs[i];
@@ -82,7 +84,7 @@ export function createLocalRepo(): Repo {
     },
 
     async listFolders() {
-      return [...store.folders].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+      return [...store.folders].sort((a, b) => compareText(a.name, b.name));
     },
 
     async createFolder(name) {
@@ -123,7 +125,7 @@ export function createLocalRepo(): Repo {
 
     async updateSection(id, patch) {
       const s = store.sections.find((x) => x.id === id);
-      if (!s) throw new Error("Bölüm bulunamadı");
+      if (!s) throw new Error(t().errors.sectionNotFound);
       const now = Date.now();
       Object.assign(s, patch, { updatedAt: now });
       touch(s.songId, now);
@@ -168,7 +170,7 @@ export function createLocalRepo(): Repo {
 
     async updateRecording(id, patch) {
       const r = store.recordings.find((x) => x.id === id);
-      if (!r) throw new Error("Kayıt bulunamadı");
+      if (!r) throw new Error(t().errors.recordingNotFound);
       Object.assign(r, patch);
       save(store);
       return { ...r };
@@ -197,7 +199,7 @@ export function createLocalRepo(): Repo {
 
     async updateVersion(id, patch) {
       const v = store.versions.find((x) => x.id === id);
-      if (!v) throw new Error("Versiyon bulunamadı");
+      if (!v) throw new Error(t().errors.versionNotFound);
       Object.assign(v, structuredClone(patch));
       save(store);
       return structuredClone(v);

@@ -105,26 +105,7 @@ export interface BackupFile extends BackupRecords {
   audio: Record<string, string>;
 }
 
-export const SECTION_LABELS: Record<SectionKind, string> = {
-  giris: "Giriş",
-  kita: "Kıta",
-  onnakarat: "Ön nakarat",
-  nakarat: "Nakarat",
-  kopru: "Köprü",
-  solo: "Solo",
-  ara: "Ara müzik",
-  final: "Final",
-  diger: "Bölüm",
-};
-
 export const SECTION_ORDER: SectionKind[] = ["giris", "kita", "onnakarat", "nakarat", "kopru", "solo", "ara", "final", "diger"];
-
-export const STATUS_LABELS: Record<SongStatus, string> = {
-  fikir: "Fikir",
-  taslak: "Taslak",
-  demo: "Demo",
-  tamam: "Tamamlandı",
-};
 
 export const STATUS_ORDER: SongStatus[] = ["fikir", "taslak", "demo", "tamam"];
 

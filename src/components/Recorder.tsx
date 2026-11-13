@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatDuration } from "../useRecordings";
+import { t as msg, useT } from "../i18n";
 
 type Phase = "idle" | "starting" | "recording" | "paused";
 
@@ -14,6 +15,7 @@ function pickMime(): string | undefined {
 
 /** Mikrofondan kayıt: başlat / duraklat / bitir, süre ve ses seviyesi göstergesiyle. */
 export function Recorder({ onRecorded }: Props) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
@@ -99,10 +101,10 @@ export function Recorder({ onRecorded }: Props) {
       const name = e instanceof DOMException ? e.name : "";
       setError(
         name === "NotAllowedError"
-          ? "Mikrofon izni verilmedi. İzin verip tekrar dene."
+          ? msg().recorder.noPermission
           : name === "NotFoundError"
-            ? "Mikrofon bulunamadı."
-            : `Kayıt başlatılamadı: ${String(e)}`,
+            ? msg().recorder.noMic
+            : msg().recorder.startFailed(String(e)),
       );
     }
   }
@@ -134,20 +136,20 @@ export function Recorder({ onRecorded }: Props) {
   return (
     <div className={`recorder ${phase}`}>
       {!active ? (
-        <button className="rec-btn" onClick={start} disabled={phase === "starting"} aria-label="Kaydı başlat">
+        <button className="rec-btn" onClick={start} disabled={phase === "starting"} aria-label={t.recorder.start}>
           <span className="rec-dot" />
         </button>
       ) : (
-        <button className="rec-btn stop" onClick={stop} aria-label="Kaydı bitir">
+        <button className="rec-btn stop" onClick={stop} aria-label={t.recorder.finish}>
           <span className="rec-square" />
         </button>
       )}
       <div className="rec-body">
         <div className="rec-status">
-          {phase === "idle" && "Kaydetmek için düğmeye bas"}
-          {phase === "starting" && "Mikrofon açılıyor…"}
-          {phase === "recording" && "Kaydediliyor"}
-          {phase === "paused" && "Duraklatıldı"}
+          {phase === "idle" && t.recorder.idle}
+          {phase === "starting" && t.recorder.starting}
+          {phase === "recording" && t.recorder.recording}
+          {phase === "paused" && t.recorder.paused}
         </div>
         <div className="rec-time">{formatDuration(active ? elapsed : 0)}</div>
         <div className="meter" aria-hidden>
@@ -157,7 +159,7 @@ export function Recorder({ onRecorded }: Props) {
       </div>
       {active && (
         <button className="btn" onClick={pause}>
-          {phase === "paused" ? "Devam" : "Duraklat"}
+          {phase === "paused" ? t.recorder.resume : t.recorder.pause}
         </button>
       )}
     </div>

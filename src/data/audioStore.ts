@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "./repo";
+import { t } from "../i18n";
 
 /**
  * Ses dosyalarının kendisini saklar.
@@ -51,7 +52,7 @@ const browserStore: AudioStore = {
   },
   async load(fileName) {
     const data = await tx<Uint8Array | undefined>("readonly", (s) => s.get(fileName));
-    if (!data) throw new Error("Ses dosyası bulunamadı");
+    if (!data) throw new Error(t().errors.audioNotFound);
     return data;
   },
   async remove(fileName) {

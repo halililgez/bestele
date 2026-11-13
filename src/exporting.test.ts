@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { chordsOverLyrics, safeFileName, songToChordPro, songToText } from "./exporting";
 import { emptySong, type Section, type Song } from "./types";
+import { setLocale } from "./i18n";
+
+// Beklenen metinler Türkçe; sistem dili ne olursa olsun Türkçe çalış
+beforeAll(() => setLocale("tr"));
 
 const song: Song = {
   ...emptySong("Gece Yarısı Treni"),

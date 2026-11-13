@@ -11,9 +11,12 @@ import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import "./styles.css";
 import App from "./App";
+import { I18nProvider } from "./i18n";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </React.StrictMode>,
 );

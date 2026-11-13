@@ -1,4 +1,5 @@
 import { guitarShape } from "../guitarChords";
+import { useT } from "../i18n";
 
 const W = 74;
 const H = 96;
@@ -10,17 +11,18 @@ const FRETS = 5;
 
 /** Tek bir akorun gitar şeması (SVG). */
 export function ChordDiagram({ chord }: { chord: string }) {
+  const t = useT();
   const shape = guitarShape(chord);
   return (
-    <figure className="chord-diagram" title={shape?.simplified ? "Basitleştirilmiş şema" : undefined}>
+    <figure className="chord-diagram" title={shape?.simplified ? t.chords.simplified : undefined}>
       <figcaption>
         {chord}
         {shape?.simplified && <span className="simplified">*</span>}
       </figcaption>
       {!shape ? (
-        <div className="no-shape">şema yok</div>
+        <div className="no-shape">{t.chords.noShape}</div>
       ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${chord} akoru gitar şeması`}>
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={t.chords.diagramLabel(chord)}>
           {/* Başlangıç perdesi */}
           {shape.baseFret > 1 && (
             <text x={LEFT - 4} y={TOP + GAP_Y * 0.7} className="cd-fret" textAnchor="end">
@@ -74,9 +76,10 @@ export function ChordDiagram({ chord }: { chord: string }) {
 
 /** Şarkıda geçen akorların şema şeridi. */
 export function ChordStrip({ chords }: { chords: string[] }) {
+  const t = useT();
   if (!chords.length) return null;
   return (
-    <div className="chord-strip" aria-label="Akor şemaları">
+    <div className="chord-strip" aria-label={t.chords.stripLabel}>
       {chords.map((c) => (
         <ChordDiagram key={c} chord={c} />
       ))}
