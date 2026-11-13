@@ -1,4 +1,4 @@
-import type { Folder, Recording, Section, Song, Version } from "../types";
+import { normalizeCapo, type Folder, type Recording, type Section, type Song, type Version } from "../types";
 import { newId, type Repo } from "./repo";
 
 /**
@@ -21,7 +21,7 @@ function load(): Store {
     if (raw) {
       const s = JSON.parse(raw) as Partial<Store>;
       return {
-        songs: s.songs ?? [],
+        songs: (s.songs ?? []).map(withCapo),
         folders: s.folders ?? [],
         sections: s.sections ?? [],
         recordings: s.recordings ?? [],
@@ -32,6 +32,11 @@ function load(): Store {
     /* boş başla */
   }
   return { songs: [], folders: [], sections: [], recordings: [], versions: [] };
+}
+
+/** Capo alanından önce kaydedilmiş şarkılar için varsayılan değer. */
+function withCapo(song: Song): Song {
+  return { ...song, capo: normalizeCapo(song.capo) };
 }
 
 function save(store: Store) {
@@ -238,7 +243,7 @@ export function createLocalRepo(): Repo {
         return fresh.length;
       };
       merge(store.folders, data.folders);
-      const added = merge(store.songs, data.songs);
+      const added = merge(store.songs, data.songs.map(withCapo));
       merge(store.sections, data.sections);
       merge(store.recordings, data.recordings);
       merge(store.versions, data.versions);

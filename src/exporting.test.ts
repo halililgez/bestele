@@ -56,6 +56,13 @@ describe("dışa aktarma", () => {
     expect(cho).not.toContain("bridge");
   });
 
+  it("capo bilgisi metne ve ChordPro'ya eklenir", () => {
+    const capoSong = { ...song, capo: 2 };
+    expect(songToText(capoSong, sections, titleOf).split("\n")[1]).toBe("Ton: Am  ·  Tempo: 92 BPM  ·  Ölçü: 4/4  ·  Capo: 2");
+    expect(songToChordPro(capoSong, sections, titleOf)).toContain("{capo: 2}");
+    expect(songToChordPro(song, sections, titleOf)).not.toContain("capo");
+  });
+
   it("dosya adı", () => {
     expect(safeFileName('Aşk: "son" şarkı?')).toBe("Aşk- -son- şarkı-");
   });
