@@ -9,6 +9,8 @@ import { sectionTitle } from "../sectionTitle";
 import { MetronomeControl } from "./MetronomeControl";
 import { StageMode } from "./StageMode";
 import { ChordStrip } from "./ChordDiagram";
+import { ChordPicker } from "./ChordPicker";
+import { Select } from "./Select";
 import { RichText, useT } from "../i18n";
 
 type Mode = "yaz" | "oku";
@@ -30,7 +32,7 @@ export function SongSheet({ song, library }: Props) {
   const [scale, setScale] = useState(1);
   const [deleting, setDeleting] = useState<Section | null>(null);
   const active = useRef<{ id: string; el: HTMLTextAreaElement } | null>(null);
-  const [customChord, setCustomChord] = useState("");
+  const areas = useRef(new Map<string, HTMLTextAreaElement>());
   const [copied, setCopied] = useState(false);
   const [stage, setStage] = useState(false);
   const [showShapes, setShowShapes] = useState(() => {
@@ -85,12 +87,23 @@ export function SongSheet({ song, library }: Props) {
   const extraUsed = used.filter((c) => !diatonic.includes(c));
 
   function insertChord(chord: string) {
-    const a = active.current;
     const clean = chord.trim();
-    if (!a || !clean) return;
+    if (!clean) return;
+    let a = active.current;
+    let start: number;
+    let end: number;
+    if (a && a.el.isConnected) {
+      start = a.el.selectionStart;
+      end = a.el.selectionEnd;
+    } else {
+      // Henüz hiçbir söz kutusuna tıklanmadıysa ilk bölümün sonuna ekle
+      const first = s.sections[0];
+      const el = first && areas.current.get(first.id);
+      if (!first || !el) return;
+      a = active.current = { id: first.id, el };
+      start = end = el.value.length;
+    }
     const el = a.el;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
     const ins = `[${clean}]`;
     s.update(a.id, { content: el.value.slice(0, start) + ins + el.value.slice(end) });
     requestAnimationFrame(() => {
@@ -261,16 +274,9 @@ export function SongSheet({ song, library }: Props) {
               {c}
             </button>
           ))}
-          <form
-            className="palette-custom"
-            onSubmit={(e) => {
-              e.preventDefault();
-              insertChord(customChord);
-              setCustomChord("");
-            }}
-          >
-            <input value={customChord} onChange={(e) => setCustomChord(e.target.value)} placeholder={t.sheet.otherChord} aria-label={t.sheet.otherChordLabel} />
-          </form>
+          <span className="palette-custom">
+            <ChordPicker flats={prefersFlats(key || "C")} defaultRoot={/^[A-G][#b]?/.exec(key)?.[0] ?? "C"} onInsert={insertChord} />
+          </span>
         </div>
       )}
 
@@ -299,18 +305,14 @@ export function SongSheet({ song, library }: Props) {
           {s.sections.map((sec, i) => (
             <div className="section-card" key={sec.id}>
               <div className="section-head">
-                <select
+                <Select
+                  size="sm"
                   className="kind-select"
                   value={sec.kind}
-                  onChange={(e) => s.update(sec.id, { kind: e.target.value as SectionKind })}
-                  aria-label={t.sheet.sectionKind}
-                >
-                  {SECTION_ORDER.map((k) => (
-                    <option key={k} value={k}>
-                      {t.sectionKinds[k]}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(k) => s.update(sec.id, { kind: k })}
+                  ariaLabel={t.sheet.sectionKind}
+                  options={SECTION_ORDER.map((k) => ({ value: k, label: t.sectionKinds[k] }))}
+                />
                 <input
                   className="label-input"
                   value={sec.label}
@@ -355,6 +357,10 @@ export function SongSheet({ song, library }: Props) {
                 rows={Math.max(3, sec.content.split("\n").length + 1)}
                 placeholder={t.sheet.lyricsPlaceholder}
                 spellCheck={false}
+                ref={(el) => {
+                  if (el) areas.current.set(sec.id, el);
+                  else areas.current.delete(sec.id);
+                }}
                 onFocus={(e) => (active.current = { id: sec.id, el: e.currentTarget })}
                 onChange={(e) => s.update(sec.id, { content: e.target.value })}
               />

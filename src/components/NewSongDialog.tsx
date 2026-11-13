@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Dialog } from "./Dialog";
+import { Select } from "./Select";
 import { MUSICAL_KEYS, emptySong, type SongFields } from "../types";
 import { useT } from "../i18n";
 
@@ -38,14 +39,11 @@ export function NewSongDialog({ defaultFolderId, defaultTag, onCreate, onClose }
           </label>
           <label className="field">
             <span>{t.common.key}</span>
-            <select value={musicalKey} onChange={(e) => setKey(e.target.value)}>
-              <option value="">{t.common.keyUnset}</option>
-              {MUSICAL_KEYS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={musicalKey}
+              onChange={setKey}
+              options={[{ value: "", label: t.common.keyUnset }, ...MUSICAL_KEYS.map((k) => ({ value: k, label: k }))]}
+            />
           </label>
           <label className="field">
             <span>{t.common.tempoBpm}</span>
