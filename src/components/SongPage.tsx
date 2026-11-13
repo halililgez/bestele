@@ -13,22 +13,16 @@ import { normalizeTag, relativeTime } from "../util";
 import { ConfirmDialog } from "./Dialog";
 import { SongSheet } from "./SongSheet";
 import { RecordingsPanel } from "./RecordingsPanel";
+import { DevelopmentPanel } from "./DevelopmentPanel";
 
 type Tab = "bilgi" | "beste" | "kayitlar" | "gelisim";
 
-const TABS: { id: Tab; label: string; soon?: boolean }[] = [
+const TABS: { id: Tab; label: string }[] = [
   { id: "beste", label: "Beste sayfası" },
-  { id: "bilgi", label: "Bilgiler" },
   { id: "kayitlar", label: "Kayıtlar" },
-  { id: "gelisim", label: "Gelişim", soon: true },
+  { id: "gelisim", label: "Gelişim" },
+  { id: "bilgi", label: "Bilgiler" },
 ];
-
-const SOON_TEXT: Record<Exclude<Tab, "bilgi" | "beste" | "kayitlar">, { title: string; body: string }> = {
-  gelisim: {
-    title: "Gelişim",
-    body: "Şarkının versiyonlarını kaydedip ilk fikirden son hâline kadar olan yolculuğu, kayıtlarıyla birlikte bir zaman çizgisinde göreceksin.",
-  },
-};
 
 const SAVE_DELAY = 500;
 
@@ -107,7 +101,6 @@ export function SongPage({ song, library, onBack }: Props) {
           {TABS.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
               {t.label}
-              {t.soon && <span className="soon">yakında</span>}
             </button>
           ))}
         </div>
@@ -202,10 +195,7 @@ export function SongPage({ song, library, onBack }: Props) {
             </div>
           </>
         ) : (
-          <div className="soon-panel">
-            <h3>{SOON_TEXT[tab].title}</h3>
-            <p>{SOON_TEXT[tab].body}</p>
-          </div>
+          <DevelopmentPanel song={song} library={library} />
         )}
       </div>
 

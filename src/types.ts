@@ -62,6 +62,31 @@ export interface Recording {
 export type RecordingFields = Omit<Recording, "id" | "createdAt">;
 export type RecordingPatch = Partial<Pick<Recording, "title" | "note" | "sectionId">>;
 
+/** Bir versiyon kaydedildiği andaki şarkının donmuş hâli */
+export interface VersionSnapshot {
+  title: string;
+  musicalKey: string;
+  tempo: number | null;
+  timeSignature: string;
+  sections: SectionFields[];
+}
+
+export interface Version {
+  id: string;
+  songId: string;
+  name: string;
+  note: string;
+  /** Kaydedildiği andaki aşama */
+  stage: SongStatus;
+  snapshot: VersionSnapshot;
+  /** Bu versiyonu temsil eden kayıtlar */
+  recordingIds: string[];
+  createdAt: number;
+}
+
+export type VersionFields = Omit<Version, "id" | "createdAt">;
+export type VersionPatch = Partial<Pick<Version, "name" | "note" | "stage" | "recordingIds">>;
+
 export const SECTION_LABELS: Record<SectionKind, string> = {
   giris: "Giriş",
   kita: "Kıta",

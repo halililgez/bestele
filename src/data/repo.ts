@@ -7,6 +7,9 @@ import type {
   SectionFields,
   Song,
   SongFields,
+  Version,
+  VersionFields,
+  VersionPatch,
 } from "../types";
 import { createLocalRepo } from "./localRepo";
 import { createSqlRepo } from "./sqlRepo";
@@ -41,6 +44,14 @@ export interface Repo {
   createRecording(fields: RecordingFields): Promise<Recording>;
   updateRecording(id: string, patch: RecordingPatch): Promise<Recording>;
   deleteRecording(id: string): Promise<void>;
+
+  /** Versiyonlar yeniden eskiye sıralı döner. */
+  listVersions(songId: string): Promise<Version[]>;
+  createVersion(fields: VersionFields): Promise<Version>;
+  updateVersion(id: string, patch: VersionPatch): Promise<Version>;
+  deleteVersion(id: string): Promise<void>;
+  /** Şarkının bütün bölümlerini verilen listeyle değiştirir (versiyona geri dönme). */
+  replaceSections(songId: string, sections: SectionFields[]): Promise<Section[]>;
 }
 
 export function newId(): string {

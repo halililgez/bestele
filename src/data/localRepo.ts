@@ -1,4 +1,4 @@
-import type { Folder, Recording, Section, Song } from "../types";
+import type { Folder, Recording, Section, Song, Version } from "../types";
 import { newId, type Repo } from "./repo";
 
 /**
@@ -12,6 +12,7 @@ interface Store {
   folders: Folder[];
   sections: Section[];
   recordings: Recording[];
+  versions: Version[];
 }
 
 function load(): Store {
@@ -19,12 +20,18 @@ function load(): Store {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw) as Partial<Store>;
-      return { songs: s.songs ?? [], folders: s.folders ?? [], sections: s.sections ?? [], recordings: s.recordings ?? [] };
+      return {
+        songs: s.songs ?? [],
+        folders: s.folders ?? [],
+        sections: s.sections ?? [],
+        recordings: s.recordings ?? [],
+        versions: s.versions ?? [],
+      };
     }
   } catch {
     /* boş başla */
   }
-  return { songs: [], folders: [], sections: [], recordings: [] };
+  return { songs: [], folders: [], sections: [], recordings: [], versions: [] };
 }
 
 function save(store: Store) {
@@ -65,6 +72,7 @@ export function createLocalRepo(): Repo {
       store.songs = store.songs.filter((s) => s.id !== id);
       store.sections = store.sections.filter((s) => s.songId !== id);
       store.recordings = store.recordings.filter((r) => r.songId !== id);
+      store.versions = store.versions.filter((v) => v.songId !== id);
       save(store);
     },
 
@@ -164,6 +172,53 @@ export function createLocalRepo(): Repo {
     async deleteRecording(id) {
       store.recordings = store.recordings.filter((r) => r.id !== id);
       save(store);
+    },
+
+    async listVersions(songId) {
+      return store.versions
+        .filter((v) => v.songId === songId)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map((v) => structuredClone(v));
+    },
+
+    async createVersion(fields) {
+      const now = Date.now();
+      const v: Version = { ...structuredClone(fields), id: newId(), createdAt: now };
+      store.versions.push(v);
+      touch(fields.songId, now);
+      save(store);
+      return structuredClone(v);
+    },
+
+    async updateVersion(id, patch) {
+      const v = store.versions.find((x) => x.id === id);
+      if (!v) throw new Error("Versiyon bulunamadı");
+      Object.assign(v, structuredClone(patch));
+      save(store);
+      return structuredClone(v);
+    },
+
+    async deleteVersion(id) {
+      store.versions = store.versions.filter((v) => v.id !== id);
+      save(store);
+    },
+
+    async replaceSections(songId, sections) {
+      const old = sectionsOf(songId);
+      const now = Date.now();
+      sections.forEach((s, i) => {
+        if (old[i]) {
+          Object.assign(old[i], { kind: s.kind, label: s.label, content: s.content, position: i, updatedAt: now });
+        } else {
+          store.sections.push({ ...s, id: newId(), songId, position: i, createdAt: now, updatedAt: now });
+        }
+      });
+      const removed = new Set(old.slice(sections.length).map((s) => s.id));
+      store.sections = store.sections.filter((s) => !removed.has(s.id));
+      store.recordings = store.recordings.map((r) => (r.sectionId && removed.has(r.sectionId) ? { ...r, sectionId: null } : r));
+      touch(songId, now);
+      save(store);
+      return sectionsOf(songId).map((s) => ({ ...s }));
     },
   };
 
