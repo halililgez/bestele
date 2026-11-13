@@ -220,6 +220,22 @@ export function createLocalRepo(): Repo {
       save(store);
       return sectionsOf(songId).map((s) => ({ ...s }));
     },
+
+    async importRecords(data) {
+      const merge = <T extends { id: string }>(target: T[], incoming: T[]) => {
+        const have = new Set(target.map((x) => x.id));
+        const fresh = incoming.filter((x) => !have.has(x.id)).map((x) => structuredClone(x));
+        target.push(...fresh);
+        return fresh.length;
+      };
+      merge(store.folders, data.folders);
+      const added = merge(store.songs, data.songs);
+      merge(store.sections, data.sections);
+      merge(store.recordings, data.recordings);
+      merge(store.versions, data.versions);
+      save(store);
+      return added;
+    },
   };
 
   function sectionsOf(songId: string): Section[] {

@@ -659,15 +659,6 @@ button {
   border-bottom-color: var(--accent);
 }
 
-.tabs .soon {
-  font-size: 10px;
-  margin-left: 6px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--accent-soft);
-  color: var(--ink-faint);
-  vertical-align: 1px;
-}
 
 .fields {
   display: grid;
@@ -765,24 +756,6 @@ button {
   color: var(--ink-faint);
 }
 
-.soon-panel {
-  padding: 28px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  color: var(--ink-soft);
-  background: var(--paper-2);
-}
-
-.soon-panel h3 {
-  margin: 0 0 6px;
-  font-family: var(--title-font);
-  font-size: calc(var(--card-title-size) * 1.05);
-  color: var(--ink);
-}
-
-.soon-panel p {
-  margin: 0;
-}
 
 /* ============ Diyalog ============ */
 
@@ -1729,4 +1702,167 @@ button {
   border-radius: var(--radius);
   background: var(--input-bg);
   margin-bottom: 8px;
+}
+
+/* ============ Dışa aktarma, yedek, kısayollar ============ */
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.export-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.export-group .btn {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.print-head {
+  display: none;
+}
+
+.backup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.link-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+}
+
+.link-btn:hover {
+  color: var(--accent);
+}
+
+.link-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.shortcuts-btn {
+  align-self: flex-start;
+  margin-left: 10px;
+}
+
+.keys {
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.keys > div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.keys dt,
+.keys dd {
+  margin: 0;
+}
+
+kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--paper-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ============ Yazdırma: yalnızca şarkı sayfası ============ */
+
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  :root,
+  :root[data-theme] {
+    --paper: #fff;
+    --ink: #111;
+    --accent: #000;
+    --ink-faint: #555;
+    --rule: transparent;
+    --margin-line: transparent;
+  }
+
+  html,
+  body,
+  #root,
+  .app,
+  .main {
+    display: block;
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  .sidebar,
+  .back,
+  .title-input,
+  .writer-input,
+  .tabs,
+  .sheet-toolbar,
+  .palette,
+  .hint,
+  .toast {
+    display: none !important;
+  }
+
+  .paper {
+    padding: 0;
+    background: #fff;
+    min-height: 0;
+  }
+
+  .paper::before {
+    display: none;
+  }
+
+  .print-head {
+    display: block;
+    margin-bottom: 18px;
+  }
+
+  .print-head h1 {
+    margin: 0;
+    font-family: var(--title-font);
+    font-size: 26pt;
+  }
+
+  .print-head p {
+    margin: 4px 0 0;
+    font-family: var(--font-ui);
+    font-size: 10pt;
+    color: #444;
+  }
+
+  .sheet-section {
+    break-inside: avoid;
+  }
+
+  .tok .c {
+    color: #000;
+  }
 }

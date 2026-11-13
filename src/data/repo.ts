@@ -1,4 +1,5 @@
 import type {
+  BackupRecords,
   Folder,
   Recording,
   RecordingFields,
@@ -52,6 +53,9 @@ export interface Repo {
   deleteVersion(id: string): Promise<void>;
   /** Şarkının bütün bölümlerini verilen listeyle değiştirir (versiyona geri dönme). */
   replaceSections(songId: string, sections: SectionFields[]): Promise<Section[]>;
+
+  /** Yedekten gelen kayıtları ekler; aynı kimlikle zaten var olanlar atlanır. Eklenen şarkı sayısını döner. */
+  importRecords(data: BackupRecords): Promise<number>;
 }
 
 export function newId(): string {
