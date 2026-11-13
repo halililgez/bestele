@@ -6,6 +6,8 @@ import { SECTION_LABELS, SECTION_ORDER, type Section, type SectionKind, type Son
 import { chordsIn, diatonicChords, prefersFlats, tokenizeLine, transposeKey, transposeText } from "../chords";
 import { ConfirmDialog } from "./Dialog";
 import { sectionTitle } from "../sectionTitle";
+import { MetronomeControl } from "./MetronomeControl";
+import { StageMode } from "./StageMode";
 
 type Mode = "yaz" | "oku";
 
@@ -27,6 +29,7 @@ export function SongSheet({ song, library }: Props) {
   const active = useRef<{ id: string; el: HTMLTextAreaElement } | null>(null);
   const [customChord, setCustomChord] = useState("");
   const [copied, setCopied] = useState(false);
+  const [stage, setStage] = useState(false);
 
   const key = song.musicalKey;
   const targetKey = key ? transposeKey(key, transpose) : "";
@@ -65,7 +68,7 @@ export function SongSheet({ song, library }: Props) {
   // Ctrl+E: Yaz/Oku, Ctrl+P: Oku görünümüne geçip yazdır
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay")) return;
+      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay, .stage")) return;
       const k = e.key.toLowerCase();
       if (k === "e") {
         e.preventDefault();
@@ -149,6 +152,9 @@ export function SongSheet({ song, library }: Props) {
             </div>
             <span className="toolbar-spacer" />
             <div className="export-group">
+              <button className="btn btn-primary" onClick={() => setStage(true)} title="Tam ekran, büyük yazı, otomatik kaydırma">
+                Sahne modu
+              </button>
               <button className="btn" onClick={() => window.print()} title="Ctrl + P">
                 Yazdır
               </button>
@@ -165,6 +171,23 @@ export function SongSheet({ song, library }: Props) {
           </>
         )}
       </div>
+
+      <MetronomeControl
+        tempo={song.tempo}
+        timeSignature={song.timeSignature}
+        onTempo={(bpm) => library.updateSong(song.id, { tempo: bpm })}
+      />
+
+      {stage && (
+        <StageMode
+          song={song}
+          sections={s.sections}
+          transpose={transpose}
+          flats={flats}
+          keyLabel={targetKey}
+          onClose={() => setStage(false)}
+        />
+      )}
 
       {mode === "yaz" && s.sections.length > 0 && (
         <div className="palette" onMouseDown={(e) => e.target instanceof HTMLButtonElement && e.preventDefault()}>

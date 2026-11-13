@@ -450,6 +450,15 @@ export async function createSqlRepo(): Promise<Repo> {
       return rows.map(toSection);
     },
 
+    async lyricsIndex() {
+      const rows = await db.select<{ song_id: string; content: string }[]>(
+        "SELECT song_id, content FROM sections WHERE content <> '' ORDER BY song_id, position",
+      );
+      const index: Record<string, string> = {};
+      for (const r of rows) index[r.song_id] = index[r.song_id] ? `${index[r.song_id]}\n${r.content}` : r.content;
+      return index;
+    },
+
     async importRecords(data) {
       const ins = async (sql: string, values: unknown[]) => {
         const r = await db.execute(sql, values);

@@ -50,7 +50,7 @@ export function SongPage({ song, library, onBack }: Props) {
   // Ctrl+1..4: sekmeler arasında geç
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay")) return;
+      if (!(e.ctrlKey || e.metaKey) || document.querySelector(".overlay, .stage")) return;
       const i = Number(e.key) - 1;
       if (i >= 0 && i < TABS.length) {
         e.preventDefault();
@@ -63,8 +63,10 @@ export function SongPage({ song, library, onBack }: Props) {
 
   // Ton başka yerden (ör. beste sayfasında transpoze) değişirse taslağa yansıt
   useEffect(() => {
-    setDraft((d) => (d.musicalKey === song.musicalKey ? d : { ...d, musicalKey: song.musicalKey }));
-  }, [song.musicalKey]);
+    setDraft((d) =>
+      d.musicalKey === song.musicalKey && d.tempo === song.tempo ? d : { ...d, musicalKey: song.musicalKey, tempo: song.tempo },
+    );
+  }, [song.musicalKey, song.tempo]);
 
   // Sayfadan çıkarken bekleyen değişiklikleri hemen kaydet
   useEffect(() => {

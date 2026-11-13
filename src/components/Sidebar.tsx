@@ -12,6 +12,9 @@ export const SHORTCUTS: [string, string][] = [
   ["Ctrl + 1 … 4", "Şarkıda sekme değiştir (Beste, Kayıtlar, Gelişim, Bilgiler)"],
   ["Ctrl + E", "Beste sayfasında Yaz / Oku arasında geç"],
   ["Ctrl + P", "Beste sayfasını yazdır (Oku görünümü)"],
+  ["Boşluk", "Sahne modunda otomatik kaydırmayı başlat / durdur"],
+  ["↑ ↓", "Sahne modunda kaydırma hızı"],
+  ["+ −", "Sahne modunda yazı boyutu"],
 ];
 
 export type LibraryFilter =

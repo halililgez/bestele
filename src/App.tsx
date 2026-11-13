@@ -18,7 +18,7 @@ export default function App() {
   // Genel kısayollar (diyalog açıkken devre dışı; diyaloglar kendi Esc'lerini yönetir)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (document.querySelector(".overlay")) return;
+      if (document.querySelector(".overlay, .stage")) return;
       const ctrl = e.ctrlKey || e.metaKey;
       const typing = e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]");
       if (ctrl && e.key.toLowerCase() === "n") {
