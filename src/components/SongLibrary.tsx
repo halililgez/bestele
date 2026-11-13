@@ -5,6 +5,7 @@ import { STATUS_ORDER, type Song, type SongStatus } from "../types";
 import { compareText, relativeTime, searchFold } from "../util";
 import { useLocale, useT } from "../i18n";
 import type { LibraryFilter } from "./Sidebar";
+import { Select } from "./Select";
 
 type Sort = "updated" | "created" | "title";
 
@@ -130,11 +131,16 @@ export function SongLibrary({ library, filter, onOpen, onNew }: Props) {
                 </button>
               ))}
             </div>
-            <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={t.library.sort}>
-              <option value="updated">{t.library.sortUpdated}</option>
-              <option value="created">{t.library.sortCreated}</option>
-              <option value="title">{t.library.sortTitle}</option>
-            </select>
+            <Select<Sort>
+              value={sort}
+              onChange={setSort}
+              ariaLabel={t.library.sort}
+              options={[
+                { value: "updated", label: t.library.sortUpdated },
+                { value: "created", label: t.library.sortCreated },
+                { value: "title", label: t.library.sortTitle },
+              ]}
+            />
           </div>
 
           {visible.length === 0 ? (

@@ -4,7 +4,6 @@ import {
   MAX_CAPO,
   MUSICAL_KEYS,
   normalizeCapo,
-  STATUS_ORDER,
   TIME_SIGNATURES,
   type Song,
   type SongFields,
@@ -16,6 +15,7 @@ import { SongSheet } from "./SongSheet";
 import { RecordingsPanel } from "./RecordingsPanel";
 import { DevelopmentPanel } from "./DevelopmentPanel";
 import { RichText, useT } from "../i18n";
+import { Select, statusOptions } from "./Select";
 
 type Tab = "bilgi" | "beste" | "kayitlar" | "gelisim";
 
@@ -130,24 +130,15 @@ export function SongPage({ song, library, onBack }: Props) {
             <div className="fields">
               <label className="field">
                 <span>{t.song.status}</span>
-                <select value={draft.status} onChange={(e) => change("status", e.target.value as SongStatus)}>
-                  {STATUS_ORDER.map((s) => (
-                    <option key={s} value={s}>
-                      {t.status[s]}
-                    </option>
-                  ))}
-                </select>
+                <Select value={draft.status} onChange={(v) => change("status", v as SongStatus)} options={statusOptions(t.status)} />
               </label>
               <label className="field">
                 <span>{t.common.key}</span>
-                <select value={draft.musicalKey} onChange={(e) => change("musicalKey", e.target.value)}>
-                  <option value="">{t.common.keyUnset}</option>
-                  {MUSICAL_KEYS.map((k) => (
-                    <option key={k} value={k}>
-                      {k}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={draft.musicalKey}
+                  onChange={(v) => change("musicalKey", v)}
+                  options={[{ value: "", label: t.common.keyUnset }, ...MUSICAL_KEYS.map((k) => ({ value: k, label: k }))]}
+                />
               </label>
               <label className="field">
                 <span>{t.common.tempoBpm}</span>
@@ -165,34 +156,28 @@ export function SongPage({ song, library, onBack }: Props) {
               </label>
               <label className="field">
                 <span>{t.common.timeSignature}</span>
-                <select value={draft.timeSignature} onChange={(e) => change("timeSignature", e.target.value)}>
-                  {TIME_SIGNATURES.map((ts) => (
-                    <option key={ts} value={ts}>
-                      {ts}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={draft.timeSignature}
+                  onChange={(v) => change("timeSignature", v)}
+                  options={TIME_SIGNATURES.map((ts) => ({ value: ts, label: ts }))}
+                />
               </label>
               <label className="field">
                 <span>{t.common.capo}</span>
-                <select value={draft.capo} onChange={(e) => change("capo", normalizeCapo(e.target.value))} title={t.song.capoTitle}>
-                  {Array.from({ length: MAX_CAPO + 1 }, (_, n) => (
-                    <option key={n} value={n}>
-                      {n === 0 ? t.song.capoNone : t.song.capoFret(n)}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={draft.capo}
+                  onChange={(v) => change("capo", normalizeCapo(v))}
+                  title={t.song.capoTitle}
+                  options={Array.from({ length: MAX_CAPO + 1 }, (_, n) => ({ value: n, label: n === 0 ? t.song.capoNone : t.song.capoFret(n) }))}
+                />
               </label>
               <label className="field">
                 <span>{t.song.folder}</span>
-                <select value={draft.folderId ?? ""} onChange={(e) => change("folderId", e.target.value || null)}>
-                  <option value="">{t.common.unfiled}</option>
-                  {library.folders.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={draft.folderId ?? ""}
+                  onChange={(v) => change("folderId", v || null)}
+                  options={[{ value: "", label: t.common.unfiled }, ...library.folders.map((f) => ({ value: f.id, label: f.name }))]}
+                />
               </label>
             </div>
 

@@ -6,6 +6,7 @@ import { formatDuration, formatSize, measureDuration, useRecordings } from "../u
 import { sectionTitle } from "../sectionTitle";
 import { Recorder } from "./Recorder";
 import { ConfirmDialog } from "./Dialog";
+import { Select } from "./Select";
 import { WaveformEditor } from "./WaveformEditor";
 import { RichText, useT } from "../i18n";
 import { formatDateTime } from "../util";
@@ -71,14 +72,11 @@ export function RecordingsPanel({ song, library }: Props) {
         <div className="rec-options">
           <label className="field">
             <span>{t.recordings.targetSection}</span>
-            <select value={targetSection} onChange={(e) => setTargetSection(e.target.value)}>
-              <option value="">{t.common.wholeSong}</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {sectionTitle(s, sections)}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={targetSection}
+              onChange={setTargetSection}
+              options={[{ value: "", label: t.common.wholeSong }, ...sections.map((s) => ({ value: s.id, label: sectionTitle(s, sections) }))]}
+            />
           </label>
           <button className="btn" onClick={() => fileInput.current?.click()} disabled={importing}>
             {importing ? t.common.loading : t.recordings.uploadFile}
@@ -207,19 +205,14 @@ function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: It
             <span>{formatDateTime(rec.createdAt)}</span>
           </div>
         </div>
-        <select
-          className="select rec-section"
+        <Select
+          size="sm"
+          className="rec-section"
           value={rec.sectionId ?? ""}
-          onChange={(e) => onUpdate({ sectionId: e.target.value || null })}
-          aria-label={t.recordings.linkedSection}
-        >
-          <option value="">{t.common.wholeSong}</option>
-          {sections.map((s) => (
-            <option key={s.id} value={s.id}>
-              {sectionTitle(s, sections)}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => onUpdate({ sectionId: v || null })}
+          ariaLabel={t.recordings.linkedSection}
+          options={[{ value: "", label: t.common.wholeSong }, ...sections.map((s) => ({ value: s.id, label: sectionTitle(s, sections) }))]}
+        />
         <button
           className={`icon-btn wave-toggle ${showWave ? "on" : ""}`}
           title={t.recordings.waveform}

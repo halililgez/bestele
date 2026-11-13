@@ -10,6 +10,7 @@ import { RichText, useT } from "../i18n";
 import { SheetText } from "./SongSheet";
 import { sectionTitle } from "../sectionTitle";
 import { ConfirmDialog, Dialog } from "./Dialog";
+import { Select, statusOptions } from "./Select";
 
 interface Props {
   song: Song;
@@ -328,19 +329,15 @@ function VersionItem({ version, previous, recordings, recById, urlFor, viewing, 
             </span>
           ))}
           {attachable.length > 0 && (
-            <select
-              className="select attach-select"
+            <Select
+              size="sm"
+              className="attach-select"
               value=""
-              onChange={(e) => e.target.value && onUpdate({ recordingIds: [...version.recordingIds, e.target.value] })}
-              aria-label={t.development.attachRecording}
-            >
-              <option value="">{t.development.attachPlaceholder}</option>
-              {attachable.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.title || t.common.untitledRecording}
-                </option>
-              ))}
-            </select>
+              placeholder={t.development.attachPlaceholder}
+              onChange={(id) => id && onUpdate({ recordingIds: [...version.recordingIds, id] })}
+              ariaLabel={t.development.attachRecording}
+              options={attachable.map((r) => ({ value: r.id, label: r.title || t.common.untitledRecording }))}
+            />
           )}
         </div>
 
@@ -466,13 +463,7 @@ function SaveVersionDialog({ song, defaultName, recordings, onClose, onSave }: S
           </label>
           <label className="field">
             <span>{t.development.stage}</span>
-            <select value={stage} onChange={(e) => setStage(e.target.value as SongStatus)}>
-              {STATUS_ORDER.map((s) => (
-                <option key={s} value={s}>
-                  {t.status[s]}
-                </option>
-              ))}
-            </select>
+            <Select value={stage} onChange={(v) => setStage(v as SongStatus)} options={statusOptions(t.status)} />
           </label>
           <label className="field check-field">
             <span>&nbsp;</span>
