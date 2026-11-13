@@ -30,7 +30,11 @@ Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve 
    xattr -cr /Applications/Bestele.app
    ```
 
-4. İlk kayıtta mikrofon izni istenir; **İzin Ver**'e tıkla. Sonradan değiştirmek için: Sistem Ayarları › Gizlilik ve Güvenlik › Mikrofon.
+4. İlk kayıtta mikrofon izni istenir; **İzin Ver**'e tıkla. Sonradan değiştirmek için: Sistem Ayarları › Gizlilik ve Güvenlik › Mikrofon. İzin penceresi hiç çıkmıyorsa izni sıfırlayıp Bestele'yi yeniden aç:
+
+   ```bash
+   tccutil reset Microphone com.bestele.app
+   ```
 
 **Güncelleme:** Yeni `.dmg`'deki Bestele'yi Uygulamalar klasörüne sürükleyip eskisinin yerine koy, 3. adımı tekrarla. Şarkıların korunur.
 
