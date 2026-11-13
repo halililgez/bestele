@@ -8,6 +8,8 @@ Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve 
 - **Beste sayfası:** Şarkı bölümlere (kıta, nakarat, köprü…) ayrılır, akorlar sözün içine `[Am]Gece ya[F]rısı` biçiminde yazılır. Tona uygun akor paleti var. Oku görünümünde akorlar sözlerin üstünde gösterilir, transpoze yapılabilir.
 - **Kayıtlar:** Mikrofondan kayıt (seviye göstergesi, duraklatma), ses dosyası yükleme, oynatma, kaydı bir bölüme bağlama ve not alma.
 - **Gelişim:** Versiyon kaydetme, aşama yolculuğu, zaman çizelgesi, versiyonları karşılaştırma ve eski bir versiyona geri dönme (dönmeden önce otomatik yedek alınır).
+- **Prova araçları:** Metronom (ölçüye göre vurgulu ilk vuruş), "Vur" ile tempo bulma, sahne modu (tam ekran, büyük yazı, otomatik kaydırma).
+- **Arama:** Ad, yazan, not, etiket ve sözlerin içinde. Türkçe karakter duyarsızdır ("gece yarisi" yazınca "Gece Yarısı" bulunur), eşleşen söz satırı kartta gösterilir.
 - **Dışa aktarma:** Yazdırma, düz metin olarak kopyalama, `.txt` ve ChordPro (`.cho`) dosyası.
 - **Yedekleme:** Bütün defter, ses dosyaları dahil tek bir `.json` dosyasına alınır. Yedekten yükleme mevcut şarkıları ezmez.
 - **Temalar:** Defter (çizgili kâğıt) ve Modern (koyu).
@@ -22,6 +24,7 @@ Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve 
 | Ctrl + 1 … 4 | Şarkıda sekme değiştir |
 | Ctrl + E | Yaz / Oku arasında geç |
 | Ctrl + P | Beste sayfasını yazdır |
+| Boşluk / ↑ ↓ / + − | Sahne modunda kaydırma, hız, yazı boyutu |
 
 ## Teknoloji
 

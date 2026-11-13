@@ -21,6 +21,18 @@ export function trLower(s: string): string {
   return s.toLocaleLowerCase("tr");
 }
 
+const FOLD: Record<string, string> = { ı: "i", ş: "s", ğ: "g", ü: "u", ö: "o", ç: "c", â: "a", î: "i", û: "u" };
+
+/**
+ * Arama için sadeleştirir: küçük harf + Türkçe karakterleri düz harfe çevirir.
+ * Böylece "gece yarisi" araması "Gece Yarısı"nı, "istasyon" da "Istasyon"u bulur.
+ */
+export function searchFold(s: string): string {
+  return s
+    .toLocaleLowerCase("tr")
+    .replace(/[ışğüöçâîû]/g, (c) => FOLD[c] ?? c);
+}
+
 /** Etiketleri temizler: boşlukları kırpar, # işaretini atar, tekrarları siler. */
 export function normalizeTag(raw: string): string {
   return raw.trim().replace(/^#+/, "").trim();

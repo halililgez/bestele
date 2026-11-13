@@ -221,6 +221,15 @@ export function createLocalRepo(): Repo {
       return sectionsOf(songId).map((s) => ({ ...s }));
     },
 
+    async lyricsIndex() {
+      const index: Record<string, string> = {};
+      for (const s of [...store.sections].sort((a, b) => a.position - b.position)) {
+        if (!s.content) continue;
+        index[s.songId] = index[s.songId] ? `${index[s.songId]}\n${s.content}` : s.content;
+      }
+      return index;
+    },
+
     async importRecords(data) {
       const merge = <T extends { id: string }>(target: T[], incoming: T[]) => {
         const have = new Set(target.map((x) => x.id));
