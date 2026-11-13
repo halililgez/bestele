@@ -8,6 +8,7 @@ import { ConfirmDialog } from "./Dialog";
 import { sectionTitle } from "../sectionTitle";
 import { MetronomeControl } from "./MetronomeControl";
 import { StageMode } from "./StageMode";
+import { ChordStrip } from "./ChordDiagram";
 
 type Mode = "yaz" | "oku";
 
@@ -30,6 +31,24 @@ export function SongSheet({ song, library }: Props) {
   const [customChord, setCustomChord] = useState("");
   const [copied, setCopied] = useState(false);
   const [stage, setStage] = useState(false);
+  const [showShapes, setShowShapes] = useState(() => {
+    try {
+      return localStorage.getItem("bestele:show-shapes") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  function toggleShapes() {
+    setShowShapes((v) => {
+      try {
+        localStorage.setItem("bestele:show-shapes", v ? "0" : "1");
+      } catch {
+        /* tercih kaydedilemezse sorun değil */
+      }
+      return !v;
+    });
+  }
 
   const key = song.musicalKey;
   const targetKey = key ? transposeKey(key, transpose) : "";
@@ -150,6 +169,9 @@ export function SongSheet({ song, library }: Props) {
                 A+
               </button>
             </div>
+            <button className={`chip ${showShapes ? "on" : ""}`} onClick={toggleShapes} aria-pressed={showShapes}>
+              Akor şemaları
+            </button>
             <span className="toolbar-spacer" />
             <div className="export-group">
               <button className="btn btn-primary" onClick={() => setStage(true)} title="Tam ekran, büyük yazı, otomatik kaydırma">
@@ -324,6 +346,7 @@ export function SongSheet({ song, library }: Props) {
                 .join("  ·  ")}
             </p>
           </header>
+          {showShapes && <ChordStrip chords={chordsIn(transposeText(s.sections.map((x) => x.content).join("\n"), transpose, flats))} />}
           {s.sections.every((sec) => !sec.content.trim()) && (
             <p className="hint">Bölümler henüz boş. "Yaz" görünümünde söz ve akor ekleyebilirsin.</p>
           )}

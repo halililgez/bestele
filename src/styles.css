@@ -2111,3 +2111,90 @@ kbd {
   background: var(--accent-soft);
   color: var(--accent);
 }
+
+/* ============ Akor şemaları ============ */
+
+.chord-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 10px 12px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  font-size: 15px;
+}
+
+:root[data-theme="defter"] .chord-strip {
+  background: #fffdf5;
+}
+
+.chord-diagram {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chord-diagram figcaption {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.chord-diagram .simplified {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.chord-diagram .no-shape {
+  width: 74px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.cd-line {
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+}
+
+.cd-nut {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.cd-dot {
+  fill: var(--ink);
+}
+
+.cd-open {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.cd-mark {
+  fill: var(--ink-faint);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+.cd-fret {
+  fill: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 9px;
+}
+
+@media print {
+  .chord-strip {
+    border: 0;
+    padding: 0;
+    background: none;
+  }
+}
