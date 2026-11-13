@@ -1,8 +1,10 @@
 [package]
 name = "bestele"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Bestele: dijital beste defteri"
+authors = ["Halil İlgez"]
+license = "GPL-3.0-only"
+repository = "https://github.com/halililgez/bestele"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
