@@ -1,0 +1,49 @@
+name: macOS sürümü
+
+# Bir sürüm (release) yayınlandığında ya da elle tetiklendiğinde macOS için
+# evrensel (Apple Silicon + Intel) .dmg üretir ve o sürüme ekler.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Dosyanın ekleneceği sürüm etiketi (ör. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Sürüm yayınlanınca o etiketten; elle tetiklenince seçilen dalın son hâlinden derler.
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run tauri build -- --target universal-apple-darwin
+
+      - name: Sürüme ekle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG" src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg --clobber
