@@ -42,7 +42,7 @@ npm install
 npm run tauri dev   # masaüstü uygulaması
 npm run dev         # yalnızca tarayıcı önizlemesi
 npm test            # birim testleri (vitest)
-npm run tauri build # kurulum dosyası (src-tauri/target/release/bundle)
+npm run tauri build # kurulum dosyası: src-tauri/target/release/bundle/nsis/Bestele_<sürüm>_x64-setup.exe
 ```
 
 İkonlar `src-tauri/icons/source.svg` dosyasından `npx tauri icon src-tauri/icons/source.svg` komutuyla üretilir.
