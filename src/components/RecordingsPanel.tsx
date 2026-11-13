@@ -6,6 +6,7 @@ import { formatDuration, formatSize, measureDuration, useRecordings } from "../u
 import { sectionTitle } from "../sectionTitle";
 import { Recorder } from "./Recorder";
 import { ConfirmDialog } from "./Dialog";
+import { WaveformEditor } from "./WaveformEditor";
 
 interface Props {
   song: Song;
@@ -116,6 +117,16 @@ export function RecordingsPanel({ song, library }: Props) {
                 urlFor={r.urlFor}
                 onUpdate={(patch) => r.update(rec.id, patch)}
                 onDelete={() => setDeleting(rec)}
+                onTrim={async (wav, durationMs) => {
+                  await r.add({
+                    blob: wav,
+                    title: `${rec.title || "Kayıt"} (kırpılmış)`,
+                    sectionId: rec.sectionId,
+                    durationMs,
+                    source: rec.source,
+                    originalName: "kirpilmis.wav",
+                  });
+                }}
               />
             ))}
           </ul>
@@ -154,10 +165,12 @@ interface ItemProps {
   urlFor: (rec: Recording) => Promise<string>;
   onUpdate: (patch: Partial<Pick<Recording, "title" | "note" | "sectionId">>) => void;
   onDelete: () => void;
+  onTrim: (wav: Blob, durationMs: number) => Promise<void>;
 }
 
-function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete }: ItemProps) {
+function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete, onTrim }: ItemProps) {
   const [title, setTitle] = useState(rec.title);
+  const [showWave, setShowWave] = useState(false);
   const [note, setNote] = useState(rec.note);
   const [src, setSrc] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -209,11 +222,21 @@ function RecordingItem({ rec, sections, urlFor, onUpdate, onDelete }: ItemProps)
             </option>
           ))}
         </select>
+        <button
+          className={`icon-btn wave-toggle ${showWave ? "on" : ""}`}
+          title="Dalga formu ve kırpma"
+          aria-label="Dalga formu ve kırpma"
+          aria-pressed={showWave}
+          onClick={() => setShowWave((v) => !v)}
+        >
+          〰
+        </button>
         <button className="icon-btn" title="Kaydı sil" aria-label="Kaydı sil" onClick={onDelete}>
           ×
         </button>
       </div>
       {loadError && <div className="rec-error">Ses açılamadı: {loadError}</div>}
+      {showWave && <WaveformEditor rec={rec} urlFor={urlFor} onTrim={onTrim} />}
       <textarea
         className="rec-note"
         value={note}

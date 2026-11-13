@@ -19,6 +19,7 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 | 3 | Gelişim: versiyonlar, zaman çizelgesi, karşılaştırma | ✅ PR merge edildi |
 | 4 | Cila: dışa aktarma ve yazdırma, yedek, ikon, kısayollar | ✅ PR merge edildi |
 | 5 | Prova araçları: metronom + tap tempo, sahne modu, sözlerde arama | ✅ PR merge edildi |
+| 6 | Kayıt dalga formu ve kırpma | ✅ PR merge edildi |
 
 ## Günlük
 
@@ -29,11 +30,11 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 - **2026-11-13 ~04:10:** Faz 4 bitti: `src/exporting.ts` (düz metin akor-üstte, ChordPro, dosya indirme; + testler), Oku görünümünde Yazdır / Metni kopyala / .txt / ChordPro, yazdırma CSS'i, `src/backup.ts` + `BackupControls` (bütün defter + ses dosyaları tek JSON; geri yükleme mevcutları ezmez, `importRecords`), kısayollar (Ctrl+N/F/1-4/E/P, Esc), uygulama ikonu (`src-tauri/icons/source.svg` → `npx tauri icon`), README. Toplam 24 birim testi.
 
 - **2026-11-13 ~04:30:** Masaüstü veritabanı salt okunur incelendi: `user_version = 4`, 5 tablo mevcut (migration'lar gerçek uygulamada çalışıyor). Faz 5 bitti: `src/metronome.ts` (lookahead zamanlayıcı, `bpmFromTaps`, `beatsPerBar`; + testler), `MetronomeControl` (Beste sayfasında; tempo şarkıya kaydedilir), `StageMode` (tam ekran, otomatik kaydırma, klavye), `lyricsIndex` + sözlerde arama, `searchFold` (Türkçe karakter duyarsız arama; + testler). Toplam 31 birim testi.
+- **2026-11-13 ~04:45:** Faz 6 bitti: `src/audioTools.ts` (`computePeaks`, `encodeWav`, `formatTime`; + testler), `WaveformEditor` (Kayıtlar'da 〰 düğmesi: dalga formu, tıkla-çal, sürükle-seç, seçimi dinle, seçimi yeni WAV kaydı olarak kaydet; orijinal korunur, bölüm bağlantısı aktarılır). Toplam 37 birim testi. 06:02 job'ı güncellendi (Faz 6-7).
 
 ## Sonraki fikirler (henüz yapılmadı)
 
 - Masaüstünde elle doğrulama: mikrofon kaydı, dosya indirme (yedek / .txt) ve yazdırma WebView2'de; SQLite'ta ekleme/düzenleme akışları.
-- Kayıt dalga formu görüntüsü, kayıtları kırpma.
 - Akor diyagramları (gitar/piyano parmak pozisyonları).
 - Kayıt dinlerken eşzamanlı söz takibi.
 - Mobil sürüm (Tauri 2 iOS/Android).
