@@ -22,6 +22,7 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 | 6 | Kayıt dalga formu ve kırpma | ✅ PR merge edildi |
 | 7 | Gitar akor şemaları | ✅ PR merge edildi |
 | 8 | SQLite deposu için gerçek SQLite testleri | ✅ PR merge edildi |
+| 9 | Gitar capo desteği | ✅ PR merge edildi |
 
 ## Günlük
 
@@ -35,10 +36,12 @@ Bu dosya geliştirmenin nerede kaldığını tutar. Her oturum işe buradan baş
 - **2026-11-13 ~04:45:** Faz 6 bitti: `src/audioTools.ts` (`computePeaks`, `encodeWav`, `formatTime`; + testler), `WaveformEditor` (Kayıtlar'da 〰 düğmesi: dalga formu, tıkla-çal, sürükle-seç, seçimi dinle, seçimi yeni WAV kaydı olarak kaydet; orijinal korunur, bölüm bağlantısı aktarılır). Toplam 37 birim testi. 06:02 job'ı güncellendi (Faz 6-7).
 - **2026-11-13 ~05:00:** Faz 7 bitti: `src/guitarChords.ts` (açık akor tablosu + E/A şekli barre; tanınmayan nitelikler basitleştirilir; + testler), `ChordDiagram` / `ChordStrip` (SVG), Oku görünümünde "Akor şemaları" düğmesi (tercih hatırlanır, transpozeye uyar, baskıda görünür). Toplam 44 birim testi.
 - **2026-11-13 ~05:15:** Faz 8 bitti: `src/data/sqlRepo.test.ts` — `@tauri-apps/plugin-sql` vitest ile taklit edilip `node:sqlite` (bellekte) üzerinde bütün SQLite deposu çalıştırılıyor: migration'lar, şarkı/klasör, bölümler (araya ekleme, sıralama, silme), kayıtlar, versiyonlar + geri dönme, şarkı silme, yedekten içe aktarma. Testler `tsconfig.test.json` ile ayrıca tip kontrolünden geçiyor (`npm run build` ikisini de çalıştırır; `@types/node` eklendi). Toplam 51 birim testi.
+- **2026-11-13 ~06:15:** Faz 9 bitti: şarkıya `capo` alanı (migration 5: `ALTER TABLE songs ADD COLUMN capo`, localRepo ve yedekte eski kayıtlar için varsayılan 0, `normalizeCapo` 0-9). Bilgiler sekmesinde Capo seçimi. Oku görünümünde "Capo N ile çal" düğmesi (tercih hatırlanır): açıkken akorlar, şemalar ve sahne modu capo kadar aşağı gösterilir (`playView` in `src/chords.ts`; ör. Bm + capo 2 → Am şekli), başlıkta "Capo 2 · Am şekli". Dışa aktarmada `Capo: N` / ChordPro `{capo: N}` (akorlar sesin tonunda kalır). Toplam 58 birim testi. Tarayıcıda denendi.
 
 ## Sonraki fikirler (henüz yapılmadı)
 
 - Masaüstünde elle doğrulama: mikrofon kaydı, dosya indirme (yedek / .txt) ve yazdırma WebView2'de.
-- Piyano akor şemaları; gitar için capo desteği.
+- Piyano akor şemaları.
+- Capo önerisi (kolay açık akorlara düşen capo perdesini önermek).
 - Kayıt dinlerken eşzamanlı söz takibi.
 - Mobil sürüm (Tauri 2 iOS/Android).

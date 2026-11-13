@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { Library } from "../useLibrary";
 import {
+  MAX_CAPO,
   MUSICAL_KEYS,
+  normalizeCapo,
   STATUS_LABELS,
   STATUS_ORDER,
   TIME_SIGNATURES,
@@ -64,9 +66,11 @@ export function SongPage({ song, library, onBack }: Props) {
   // Ton başka yerden (ör. beste sayfasında transpoze) değişirse taslağa yansıt
   useEffect(() => {
     setDraft((d) =>
-      d.musicalKey === song.musicalKey && d.tempo === song.tempo ? d : { ...d, musicalKey: song.musicalKey, tempo: song.tempo },
+      d.musicalKey === song.musicalKey && d.tempo === song.tempo && d.capo === song.capo
+        ? d
+        : { ...d, musicalKey: song.musicalKey, tempo: song.tempo, capo: song.capo },
     );
-  }, [song.musicalKey, song.tempo]);
+  }, [song.musicalKey, song.tempo, song.capo]);
 
   // Sayfadan çıkarken bekleyen değişiklikleri hemen kaydet
   useEffect(() => {
@@ -169,6 +173,16 @@ export function SongPage({ song, library, onBack }: Props) {
                   {TIME_SIGNATURES.map((t) => (
                     <option key={t} value={t}>
                       {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Capo</span>
+                <select value={draft.capo} onChange={(e) => change("capo", normalizeCapo(e.target.value))} title="Gitarda capo takılan perde">
+                  {Array.from({ length: MAX_CAPO + 1 }, (_, n) => (
+                    <option key={n} value={n}>
+                      {n === 0 ? "Yok" : `${n}. perde`}
                     </option>
                   ))}
                 </select>

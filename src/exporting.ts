@@ -28,6 +28,7 @@ function metaLine(song: Song): string {
     song.musicalKey && `Ton: ${song.musicalKey}`,
     song.tempo && `Tempo: ${song.tempo} BPM`,
     song.timeSignature && `Ölçü: ${song.timeSignature}`,
+    song.capo > 0 && `Capo: ${song.capo}`,
   ]
     .filter(Boolean)
     .join("  ·  ");
@@ -62,6 +63,7 @@ export function songToChordPro(song: Song, sections: Section[], titleOf: TitleOf
   if (song.musicalKey) out.push(`{key: ${song.musicalKey}}`);
   if (song.tempo) out.push(`{tempo: ${song.tempo}}`);
   if (song.timeSignature) out.push(`{time: ${song.timeSignature}}`);
+  if (song.capo > 0) out.push(`{capo: ${song.capo}}`);
   for (const s of sections) {
     if (!s.content.trim()) continue;
     const env = CHORDPRO_ENV[s.kind];

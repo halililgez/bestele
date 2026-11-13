@@ -41,13 +41,42 @@ describe("SQLite deposu", () => {
   it("migration'ları çalıştırır ve sürümü yazar", async () => {
     await createSqlRepo();
     const v = current.prepare("PRAGMA user_version").get() as { user_version: number };
-    expect(v.user_version).toBe(4);
+    expect(v.user_version).toBe(5);
     const tables = (current.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[]).map(
       (t) => t.name,
     );
     expect(tables).toEqual(["folders", "recordings", "sections", "songs", "versions"]);
     // İkinci açılışta migration tekrar çalışmamalı
     await createSqlRepo();
+  });
+
+  it("migration 5: eski şarkılara capo = 0 eklenir", async () => {
+    // Faz 8 sonundaki (user_version 4) bir veritabanını taklit et
+    current.exec(`CREATE TABLE songs (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, writer TEXT NOT NULL DEFAULT '', musical_key TEXT NOT NULL DEFAULT '',
+      tempo INTEGER, time_signature TEXT NOT NULL DEFAULT '4/4', status TEXT NOT NULL DEFAULT 'fikir',
+      notes TEXT NOT NULL DEFAULT '', folder_id TEXT, tags TEXT NOT NULL DEFAULT '[]',
+      created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+      INSERT INTO songs (id, title, created_at, updated_at) VALUES ('eski', 'Eski şarkı', 1, 1);
+      PRAGMA user_version = 4;`);
+    const repo = await createSqlRepo();
+    const [old] = await repo.listSongs();
+    expect(old.capo).toBe(0);
+    expect((await repo.updateSong("eski", { capo: 3 })).capo).toBe(3);
+    expect((await repo.updateSong("eski", { capo: 42 })).capo).toBe(9);
+  });
+
+  it("capo: oluşturma, güncelleme ve yedekten içe aktarma", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong({ ...emptySong("Capolu"), capo: 2 });
+    expect(song.capo).toBe(2);
+    expect((await repo.updateSong(song.id, { capo: 0 })).capo).toBe(0);
+    // Capo alanı olmayan eski bir yedek
+    const { capo: _ignored, ...legacy } = { ...song, id: "eski-yedek" };
+    void _ignored;
+    const data = { folders: [], songs: [legacy as typeof song], sections: [], recordings: [], versions: [] };
+    expect(await repo.importRecords(data)).toBe(1);
+    expect((await repo.listSongs()).find((s) => s.id === "eski-yedek")?.capo).toBe(0);
   });
 
   it("şarkı ve klasör işlemleri", async () => {
