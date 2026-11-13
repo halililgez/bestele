@@ -18,6 +18,24 @@ Dijital beste defteri. Şarkıları, akorları, sözleri, ses kayıtlarını ve 
 
 **Verilerin nerede?** Şarkılar `%APPDATA%\com.bestele.app\bestele.db` dosyasında, ses kayıtları aynı klasördeki `recordings` içinde. Bilgisayar değiştirirken uygulamadaki **Yedekle** ile her şeyi tek dosyaya al, yeni bilgisayarda **Yedekten yükle** de.
 
+## Kurulum (macOS)
+
+**Gereksinim:** macOS 10.15 (Catalina) veya üstü. Hem Apple Silicon (M1/M2/M3…) hem Intel Mac'lerde çalışır.
+
+1. [Releases](../../releases/latest) sayfasından **`Bestele_<sürüm>_universal.dmg`** dosyasını indir.
+2. `.dmg` dosyasını aç, **Bestele**'yi **Uygulamalar** (Applications) klasörüne sürükle.
+3. Uygulama Apple tarafından imzalı ve onaylı olmadığı için ilk açılışta macOS onu engeller ("hasarlı" ya da "geliştirici doğrulanamadı" der). Terminal'de bir kez şunu çalıştır, ardından Bestele'yi normal şekilde aç:
+
+   ```bash
+   xattr -cr /Applications/Bestele.app
+   ```
+
+4. İlk kayıtta mikrofon izni istenir; **İzin Ver**'e tıkla. Sonradan değiştirmek için: Sistem Ayarları › Gizlilik ve Güvenlik › Mikrofon.
+
+**Güncelleme:** Yeni `.dmg`'deki Bestele'yi Uygulamalar klasörüne sürükleyip eskisinin yerine koy, 3. adımı tekrarla. Şarkıların korunur.
+
+**Verilerin nerede?** `~/Library/Application Support/com.bestele.app/` (şarkılar `bestele.db`, ses kayıtları `recordings`).
+
 ## Özellikler
 
 - **Şarkı listesi:** Arama, durum filtresi (Fikir, Taslak, Demo, Tamamlandı), sıralama, klasörler ve etiketler.
@@ -69,6 +87,10 @@ npm run tauri build # kurulum dosyası: src-tauri/target/release/bundle/nsis/Bes
 ```bash
 gh release create v<sürüm> src-tauri/target/release/bundle/nsis/Bestele_<sürüm>_x64-setup.exe
 ```
+
+Sürüm yayınlanınca GitHub Actions ([release-macos.yml](.github/workflows/release-macos.yml)) macOS `.dmg` dosyasını kendisi derleyip aynı sürüme ekler. Var olan bir sürüme elle eklemek için: Actions › macOS sürümü › Run workflow, etiketi gir.
+
+**Mac'te geliştirme:** Xcode Command Line Tools (`xcode-select --install`), Node.js ve Rust gerekir. `npm install` ve `npm run tauri dev` aynı şekilde çalışır; `npm run tauri build` `.app` ve `.dmg` üretir (`src-tauri/target/release/bundle/`). macOS'a özel ayarlar `src-tauri/tauri.macos.conf.json` ve `src-tauri/Info.plist` dosyalarındadır.
 
 Geliştirme notları ve fazlar için: [docs/ILERLEME.md](docs/ILERLEME.md)
 
