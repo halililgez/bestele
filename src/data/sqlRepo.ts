@@ -1,4 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
+import { invoke } from "@tauri-apps/api/core";
 import { normalizeCapo, type Folder, type Recording, type Section, type SectionKind, type Song, type SongFields, type SongStatus, type Version } from "../types";
 import { newId, type Repo } from "./repo";
 import { t } from "../i18n";
@@ -175,15 +176,38 @@ function toSection(r: SectionRow): Section {
   };
 }
 
+interface Statement {
+  sql: string;
+  values?: unknown[];
+}
+
+/**
+ * Birden çok yazmayı tek bir transaction'da çalıştırır (Rust tarafındaki `sql_batch`): ya hepsi yazılır ya hiçbiri.
+ * tauri-plugin-sql bir bağlantı havuzu kullandığından BEGIN/COMMIT'i ayrı `execute` çağrılarıyla göndermek güvenli değildir.
+ * Her komutun etkilediği satır sayısını döner.
+ */
+async function batch(db: Database, statements: Statement[]): Promise<number[]> {
+  if (statements.length === 0) return [];
+  return invoke<number[]>("sql_batch", {
+    db: db.path,
+    statements: statements.map((s) => ({ sql: s.sql, values: (s.values ?? []).map((v) => (v === undefined ? null : v)) })),
+  });
+}
+
 async function migrate(db: Database) {
   const rows = await db.select<{ user_version: number }[]>("PRAGMA user_version");
   let version = rows[0]?.user_version ?? 0;
   while (version < MIGRATIONS.length) {
-    for (const stmt of MIGRATIONS[version].split(";").map((s) => s.trim()).filter(Boolean)) {
-      await db.execute(stmt);
-    }
+    // Migration ve sürüm numarası birlikte yazılır: yarıda kesilirse ikisi de geri alınır,
+    // bir sonraki açılışta migration baştan ve temiz çalışır.
+    const stmts: Statement[] = MIGRATIONS[version]
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((sql) => ({ sql }));
     version += 1;
-    await db.execute(`PRAGMA user_version = ${version}`);
+    stmts.push({ sql: `PRAGMA user_version = ${version}` });
+    await batch(db, stmts);
   }
 }
 
@@ -272,10 +296,12 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async deleteSong(id) {
-      await db.execute("DELETE FROM versions WHERE song_id = $1", [id]);
-      await db.execute("DELETE FROM recordings WHERE song_id = $1", [id]);
-      await db.execute("DELETE FROM sections WHERE song_id = $1", [id]);
-      await db.execute("DELETE FROM songs WHERE id = $1", [id]);
+      await batch(db, [
+        { sql: "DELETE FROM versions WHERE song_id = $1", values: [id] },
+        { sql: "DELETE FROM recordings WHERE song_id = $1", values: [id] },
+        { sql: "DELETE FROM sections WHERE song_id = $1", values: [id] },
+        { sql: "DELETE FROM songs WHERE id = $1", values: [id] },
+      ]);
     },
 
     async listFolders() {
@@ -298,8 +324,10 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async deleteFolder(id) {
-      await db.execute("UPDATE songs SET folder_id = NULL WHERE folder_id = $1", [id]);
-      await db.execute("DELETE FROM folders WHERE id = $1", [id]);
+      await batch(db, [
+        { sql: "UPDATE songs SET folder_id = NULL WHERE folder_id = $1", values: [id] },
+        { sql: "DELETE FROM folders WHERE id = $1", values: [id] },
+      ]);
     },
 
     async listSections(songId) {
@@ -310,17 +338,17 @@ export async function createSqlRepo(): Promise<Repo> {
     async createSection(songId, fields, index) {
       const existing = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
       const at = index === undefined ? existing.length : Math.max(0, Math.min(index, existing.length));
-      // Araya ekleniyorsa sonrakileri bir kaydır
-      for (let i = existing.length - 1; i >= at; i--) {
-        await db.execute("UPDATE sections SET position = $1 WHERE id = $2", [i + 1, existing[i].id]);
-      }
       const id = newId();
       const now = Date.now();
-      await db.execute(
-        "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-        [id, songId, fields.kind, fields.label, fields.content, at, now, now],
-      );
-      await touchSong(songId, now);
+      // Sonraki bölümleri kaydırma, ekleme ve şarkının zamanı tek seferde yazılır
+      await batch(db, [
+        ...existing.slice(at).map((s, k) => ({ sql: "UPDATE sections SET position = $1 WHERE id = $2", values: [at + k + 1, s.id] })),
+        {
+          sql: "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+          values: [id, songId, fields.kind, fields.label, fields.content, at, now, now],
+        },
+        touchStmt(songId, now),
+      ]);
       return getSection(id);
     },
 
@@ -340,20 +368,22 @@ export async function createSqlRepo(): Promise<Repo> {
 
     async deleteSection(id) {
       const section = await getSection(id);
-      await db.execute("UPDATE recordings SET section_id = NULL WHERE section_id = $1", [id]);
-      await db.execute("DELETE FROM sections WHERE id = $1", [id]);
-      const rest = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [section.songId]);
-      for (let i = 0; i < rest.length; i++) {
-        if (rest[i].position !== i) await db.execute("UPDATE sections SET position = $1 WHERE id = $2", [i, rest[i].id]);
-      }
-      await touchSong(section.songId, Date.now());
+      const rest = (
+        await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [section.songId])
+      ).filter((r) => r.id !== id);
+      await batch(db, [
+        { sql: "UPDATE recordings SET section_id = NULL WHERE section_id = $1", values: [id] },
+        { sql: "DELETE FROM sections WHERE id = $1", values: [id] },
+        ...rest.flatMap((r, i) => (r.position !== i ? [{ sql: "UPDATE sections SET position = $1 WHERE id = $2", values: [i, r.id] }] : [])),
+        touchStmt(section.songId, Date.now()),
+      ]);
     },
 
     async reorderSections(songId, orderedIds) {
-      for (let i = 0; i < orderedIds.length; i++) {
-        await db.execute("UPDATE sections SET position = $1 WHERE id = $2 AND song_id = $3", [i, orderedIds[i], songId]);
-      }
-      await touchSong(songId, Date.now());
+      await batch(db, [
+        ...orderedIds.map((sid, i) => ({ sql: "UPDATE sections SET position = $1 WHERE id = $2 AND song_id = $3", values: [i, sid, songId] })),
+        touchStmt(songId, Date.now()),
+      ]);
     },
 
     async listRecordings(songId) {
@@ -435,25 +465,24 @@ export async function createSqlRepo(): Promise<Repo> {
       // Aynı sıradaki bölümler yerinde güncellenir ki kayıtların bölüm bağlantıları korunsun
       const old = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
       const now = Date.now();
-      for (let i = 0; i < sections.length; i++) {
-        const s = sections[i];
-        if (old[i]) {
-          await db.execute(
-            "UPDATE sections SET kind = $1, label = $2, content = $3, position = $4, updated_at = $5 WHERE id = $6",
-            [s.kind, s.label, s.content, i, now, old[i].id],
-          );
-        } else {
-          await db.execute(
-            "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            [newId(), songId, s.kind, s.label, s.content, i, now, now],
-          );
-        }
-      }
+      const stmts: Statement[] = sections.map((s, i) =>
+        old[i]
+          ? {
+              sql: "UPDATE sections SET kind = $1, label = $2, content = $3, position = $4, updated_at = $5 WHERE id = $6",
+              values: [s.kind, s.label, s.content, i, now, old[i].id],
+            }
+          : {
+              sql: "INSERT INTO sections (id, song_id, kind, label, content, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+              values: [newId(), songId, s.kind, s.label, s.content, i, now, now],
+            },
+      );
       for (const s of old.slice(sections.length)) {
-        await db.execute("UPDATE recordings SET section_id = NULL WHERE section_id = $1", [s.id]);
-        await db.execute("DELETE FROM sections WHERE id = $1", [s.id]);
+        stmts.push({ sql: "UPDATE recordings SET section_id = NULL WHERE section_id = $1", values: [s.id] });
+        stmts.push({ sql: "DELETE FROM sections WHERE id = $1", values: [s.id] });
       }
-      await touchSong(songId, now);
+      stmts.push(touchStmt(songId, now));
+      // Ya bütün bölümler versiyondaki hâline döner ya da hiçbiri değişmez
+      await batch(db, stmts);
       const rows = await db.select<SectionRow[]>("SELECT * FROM sections WHERE song_id = $1 ORDER BY position", [songId]);
       return rows.map(toSection);
     },
@@ -468,43 +497,44 @@ export async function createSqlRepo(): Promise<Repo> {
     },
 
     async importRecords(data) {
-      const ins = async (sql: string, values: unknown[]) => {
-        const r = await db.execute(sql, values);
-        return r.rowsAffected;
-      };
+      // Yedeğin tamamı tek transaction'da eklenir: yarıda kalırsa defter yükleme öncesindeki hâlinde kalır
+      const stmts: Statement[] = [];
+      const ins = (sql: string, values: unknown[]) => stmts.push({ sql, values });
       for (const f of data.folders) {
-        await ins("INSERT OR IGNORE INTO folders (id, name, created_at) VALUES ($1, $2, $3)", [f.id, f.name, f.createdAt]);
+        ins("INSERT OR IGNORE INTO folders (id, name, created_at) VALUES ($1, $2, $3)", [f.id, f.name, f.createdAt]);
       }
-      let added = 0;
+      const firstSong = stmts.length;
       for (const s of data.songs) {
-        added += await ins(
+        ins(
           `INSERT OR IGNORE INTO songs (id, title, writer, musical_key, tempo, time_signature, capo, status, notes, folder_id, tags, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
           [s.id, s.title, s.writer, s.musicalKey, s.tempo, s.timeSignature, normalizeCapo(s.capo), s.status, s.notes, s.folderId, JSON.stringify(s.tags), s.createdAt, s.updatedAt],
         );
       }
       for (const s of data.sections) {
-        await ins(
+        ins(
           `INSERT OR IGNORE INTO sections (id, song_id, kind, label, content, position, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [s.id, s.songId, s.kind, s.label, s.content, s.position, s.createdAt, s.updatedAt],
         );
       }
       for (const r of data.recordings) {
-        await ins(
+        ins(
           `INSERT OR IGNORE INTO recordings (id, song_id, section_id, title, note, file_name, mime_type, duration_ms, size_bytes, source, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [r.id, r.songId, r.sectionId, r.title, r.note, r.fileName, r.mimeType, r.durationMs, r.sizeBytes, r.source, r.createdAt],
         );
       }
       for (const v of data.versions) {
-        await ins(
+        ins(
           `INSERT OR IGNORE INTO versions (id, song_id, name, note, stage, snapshot, recording_ids, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [v.id, v.songId, v.name, v.note, v.stage, JSON.stringify(v.snapshot), JSON.stringify(v.recordingIds), v.createdAt],
         );
       }
-      return added;
+      const affected = await batch(db, stmts);
+      // Gerçekten eklenen (zaten var olmadığı için atlanmayan) şarkı sayısı
+      return affected.slice(firstSong, firstSong + data.songs.length).reduce((a, b) => a + b, 0);
     },
   };
 
@@ -528,5 +558,9 @@ export async function createSqlRepo(): Promise<Repo> {
 
   async function touchSong(songId: string, now: number) {
     await db.execute("UPDATE songs SET updated_at = $1 WHERE id = $2", [now, songId]);
+  }
+
+  function touchStmt(songId: string, now: number): Statement {
+    return { sql: "UPDATE songs SET updated_at = $1 WHERE id = $2", values: [now, songId] };
   }
 }

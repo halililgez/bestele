@@ -9,6 +9,9 @@ export type Rich = [before: string, bold: string, after: string];
 export const tr = {
   common: {
     cancel: "Vazgeç",
+    saveFailed: (e: string) => `Dosya kaydedilemedi: ${e}`,
+    filterText: "Metin dosyası",
+    filterBackup: "Bestele yedeği",
     ok: "Tamam",
     save: "Kaydet",
     delete: "Sil",
@@ -98,8 +101,8 @@ export const tr = {
     import: "Yedekten yükle",
     fileName: (date: string) => `bestele-yedek-${date}.json`,
     readyTitle: "Yedek hazır",
-    readyBody: (songs: number, versions: number, audio: number, file: string) =>
-      `${songs} şarkı, ${versions} versiyon ve ${audio} ses dosyası “${file}” dosyasına kaydedildi (İndirilenler klasörü). Bu dosyayı güvenli bir yerde sakla.`,
+    readyBody: (songs: number, versions: number, audio: number, file: string, inDownloads: boolean) =>
+      `${songs} şarkı, ${versions} versiyon ve ${audio} ses dosyası “${file}” dosyasına kaydedildi${inDownloads ? " (İndirilenler klasörü)" : ""}. Bu dosyayı güvenli bir yerde sakla.`,
     exportFailed: "Yedek alınamadı",
     importedTitle: "Yedek yüklendi",
     importedAll: (n: number) => `${n} şarkı deftere eklendi.`,
@@ -304,10 +307,12 @@ export const tr = {
     beforeRestoreName: (name: string) => `“${name}” versiyonuna dönmeden önce`,
     beforeRestoreNote: "Geri dönmeden önce otomatik kaydedildi.",
     restored: (name: string) => `Şarkı “${name}” hâline döndürüldü. Önceki hâli de versiyon olarak saklandı.`,
+    restoreAborted: "Geri dönülmedi: şu anki hâl yedeklenemediği için şarkıya dokunulmadı.",
+    restoreFailed: (e: string) => `Geri dönme tamamlanamadı: ${e}`,
     restoreTitle: "Bu versiyona dön",
     restoreBody: (name: string) =>
       [
-        "Sözler, akorlar, ton, tempo ve ölçü ",
+        "Sözler, akorlar, ton, tempo, ölçü ve capo ",
         name,
         " versiyonundaki hâline döndürülecek. Şu anki hâli kaybolmaz, önce otomatik olarak yeni bir versiyon şeklinde saklanır.",
       ] as Rich,

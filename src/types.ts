@@ -70,6 +70,8 @@ export interface VersionSnapshot {
   musicalKey: string;
   tempo: number | null;
   timeSignature: string;
+  /** Capo eklenmeden önce kaydedilmiş versiyonlarda yoktur. */
+  capo?: number;
   sections: SectionFields[];
 }
 

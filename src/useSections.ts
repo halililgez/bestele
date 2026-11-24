@@ -55,15 +55,25 @@ export function useSections(songId: string, onTouched: () => void) {
     };
   }, [songId, flush]);
 
-  const run = useCallback(async (fn: () => Promise<void>) => {
-    try {
-      await flush();
-      await fn();
-      touchedRef.current();
-    } catch (e) {
-      setError(String(e));
-    }
-  }, [flush]);
+  // Ekleme / silme / taşıma işlemleri sırayla çalışır: hızlı çift tıklamada iki ekleme
+  // aynı bölüm listesini okuyup aynı sıra numarasını yazmasın.
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const run = useCallback(
+    (fn: () => Promise<void>) => {
+      const next = queue.current.then(async () => {
+        try {
+          await flush();
+          await fn();
+          touchedRef.current();
+        } catch (e) {
+          setError(String(e));
+        }
+      });
+      queue.current = next;
+      return next;
+    },
+    [flush],
+  );
 
   const add = useCallback(
     (kind: SectionKind, index?: number, fields?: Partial<SectionFields>) =>

@@ -9,6 +9,7 @@ export function makeSnapshot(song: Song, sections: Section[]): VersionSnapshot {
     musicalKey: song.musicalKey,
     tempo: song.tempo,
     timeSignature: song.timeSignature,
+    capo: song.capo ?? 0,
     sections: sections.map((s) => ({ kind: s.kind, label: s.label, content: s.content })),
   };
 }
@@ -25,6 +26,7 @@ export function snapshotText(snap: VersionSnapshot, titleOf: (s: Section, all: S
     snap.musicalKey ? m.key(snap.musicalKey) : null,
     snap.tempo ? m.tempo(snap.tempo) : null,
     m.timeSignature(snap.timeSignature),
+    snap.capo ? m.capo(snap.capo) : null,
   ]
     .filter(Boolean)
     .join(" · ");

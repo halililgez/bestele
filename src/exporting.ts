@@ -1,6 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
 import { tokenizeLine } from "./chords";
 import type { Section, Song } from "./types";
 import { t } from "./i18n";
+import { isTauri } from "./data/repo";
 
 type TitleOf = (s: Section, all: Section[]) => string;
 
@@ -82,6 +84,25 @@ export function songToChordPro(song: Song, sections: Section[], titleOf: TitleOf
 /** Dosya adı için güvenli hâle getirir (Türkçe harfler korunur). */
 export function safeFileName(name: string): string {
   return (name || t().common.untitledSong).replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+export type SaveResult = { saved: false } | { saved: true; where: string; inDownloads: boolean };
+
+/**
+ * Dosyayı kullanıcıya kaydettirir. Masaüstünde "Farklı kaydet" penceresi açılır ve dosya seçilen yere yazılır;
+ * tarayıcı önizlemesinde normal indirme kullanılır. Kullanıcı vazgeçerse `{ saved: false }` döner.
+ */
+export async function saveFile(fileName: string, content: string, filterName: string): Promise<SaveResult> {
+  if (!isTauri()) {
+    const mime = fileName.endsWith(".json") ? "application/json" : "text/plain;charset=utf-8";
+    downloadFile(fileName, content, mime);
+    return { saved: true, where: fileName, inDownloads: true };
+  }
+  const extension = fileName.split(".").pop() ?? "txt";
+  const where = await invoke<string | null>("pick_export_path", { fileName, filterName, extension });
+  if (!where) return { saved: false };
+  await invoke("write_export", new TextEncoder().encode(content));
+  return { saved: true, where, inDownloads: false };
 }
 
 export function downloadFile(fileName: string, content: BlobPart, mime: string) {

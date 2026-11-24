@@ -9,7 +9,34 @@ import { emptySong } from "../types";
 let current: DatabaseSync;
 
 /** tauri-plugin-sql'in `$1, $2…` yer tutucularını SQLite'ın konumsal bağlamasıyla eşler. */
+function bindValues(values: unknown[]) {
+  // "$1" → values[0] … (node:sqlite adlandırılmış parametreleri nesneyle bağlar)
+  return [Object.fromEntries(values.map((v, i) => [`$${i + 1}`, v === undefined ? null : v]))] as never[];
+}
+
+/** Rust'taki `sql_batch` komutunun karşılığı: hepsi tek transaction'da, hata olursa geri alınır. */
+let failBatchAt: string | null = null;
+function fakeInvoke(cmd: string, args: { statements: { sql: string; values: unknown[] }[] }) {
+  if (cmd !== "sql_batch") throw new Error(`beklenmeyen komut: ${cmd}`);
+  current.exec("BEGIN");
+  try {
+    const affected = args.statements.map(({ sql, values }) => {
+      if (failBatchAt && sql.includes(failBatchAt)) throw new Error("yapay hata");
+      const st = current.prepare(sql);
+      return Number((values.length ? st.run(...bindValues(values)) : st.run()).changes);
+    });
+    current.exec("COMMIT");
+    return Promise.resolve(affected);
+  } catch (e) {
+    current.exec("ROLLBACK");
+    return Promise.reject(e);
+  }
+}
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: fakeInvoke }));
+
 class FakeDatabase {
+  path = "sqlite:bestele.db";
   constructor(private db: DatabaseSync) {}
   static async load() {
     return new FakeDatabase(current);
@@ -207,5 +234,45 @@ describe("SQLite deposu", () => {
     expect((await repo.listSongs()).map((s) => s.title).sort()).toEqual(["Var olan", "Yeni"]);
     expect(await repo.listSections("yeni-1")).toHaveLength(1);
     expect(await repo.importRecords(data)).toBe(0);
+  });
+
+  it("yarıda kalan migration geri alınır, sonraki açılışta temiz çalışır", async () => {
+    failBatchAt = "ALTER TABLE songs ADD COLUMN capo";
+    await expect(createSqlRepo()).rejects.toThrow();
+    const v = current.prepare("PRAGMA user_version").get() as { user_version: number };
+    expect(v.user_version).toBe(4);
+    failBatchAt = null;
+    await createSqlRepo();
+    expect((current.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
+  });
+
+  it("çok adımlı yazmalar bölünmez: hata olursa hiçbiri yazılmaz", async () => {
+    const repo = await createSqlRepo();
+    const song = await repo.createSong(emptySong("Bütün"));
+    await repo.createSection(song.id, { kind: "kita", label: "", content: "eski 1" });
+    await repo.createSection(song.id, { kind: "nakarat", label: "", content: "eski 2" });
+
+    // Versiyona dönme: sona doğru bir adım başarısız olursa ilk bölümler de değişmemeli
+    failBatchAt = "DELETE FROM sections";
+    await expect(repo.replaceSections(song.id, [{ kind: "kita", label: "", content: "yeni" }])).rejects.toThrow();
+    expect((await repo.listSections(song.id)).map((s) => s.content)).toEqual(["eski 1", "eski 2"]);
+
+    // Şarkı silme yarıda kalırsa bölümleri de yerinde kalmalı
+    failBatchAt = "DELETE FROM songs";
+    await expect(repo.deleteSong(song.id)).rejects.toThrow();
+    expect(await repo.listSections(song.id)).toHaveLength(2);
+
+    // Yedek yükleme yarıda kalırsa hiçbir şarkı eklenmemeli
+    failBatchAt = "INSERT OR IGNORE INTO versions";
+    const data = {
+      folders: [],
+      songs: [{ ...song, id: "yedek-1" }],
+      sections: [],
+      recordings: [],
+      versions: [{ id: "v1", songId: "yedek-1", name: "", note: "", stage: "fikir" as const, recordingIds: [], createdAt: 1,
+        snapshot: { title: "", musicalKey: "", tempo: null, timeSignature: "4/4", sections: [] } }],
+    };
+    await expect(repo.importRecords(data)).rejects.toThrow();
+    expect(await repo.listSongs()).toHaveLength(1);
   });
 });
